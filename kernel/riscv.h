@@ -80,4 +80,10 @@ static inline void w_mepc(reg_t x) {
     asm volatile("csrw mepc, %0" : : "r" (x));
 }
 
+static inline reg_t r_a1() {
+    reg_t x;
+    asm volatile("mv %0, a1" : "=r" (x));
+    return x;
+}
+
 #endif

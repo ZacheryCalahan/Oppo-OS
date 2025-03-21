@@ -13,23 +13,23 @@ int32_t virtio_gpu_init_mmio() {
 
     for (int i = 0; i < 8; i++) {
         uint32_t* curr_addr = (volatile uint32_t *)(VIRTIO_BASE_ADDRESS_MMIO + (i * 0x1000));
-        printf("Checking address 0x%x for virtio-gpu. ", curr_addr);
+        printf("Checking address 0x%x for virtio-gpu. \r\n", curr_addr);
 
         if (curr_addr[VIRTR_MAGIC_O] != VIRTIO_MAGIC_NUMBER) {
             // This is not a valid virtio device.
-            printf("Invalid magic number found: 0x%x\n", curr_addr[VIRTR_MAGIC_O]);
+            printf("Invalid magic number found: 0x%x\r\n", curr_addr[VIRTR_MAGIC_O]);
             continue;
         }
 
         if (curr_addr[VIRTR_VERSION_O] == VIRTIO_VERSION) {
             // This is not a valid virtio version.
-            printf("Invalid Version found: 0x%x\n", curr_addr[VIRTR_VERSION_O]);
+            printf("Invalid Version found: 0x%x\r\n", curr_addr[VIRTR_VERSION_O]);
             continue;
         }
 
         if (curr_addr[VIRTR_DEV_ID_O] != (uint32_t) 16) {
             // Device isn't of type GPU.
-            printf("Invalid Device ID found: 0x%x\n", curr_addr[VIRTR_DEV_ID_O]);
+            printf("Invalid Device ID found: 0x%x\r\n", curr_addr[VIRTR_DEV_ID_O]);
             continue;
         }
         
