@@ -20,3 +20,14 @@ char* strcpy(char *dst, const char *src) {
     ;
     return dst;
 }
+
+uint32_t strcmp(char *a, char *b) {
+    for (int i = 0; ; i++) {
+        if (a[i] == '\0' && b[i] == '\0')
+            return 0;
+
+        char diff = a[i] - b[i];
+        if (diff)
+            return diff;
+    }
+}

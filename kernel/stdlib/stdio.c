@@ -70,6 +70,13 @@ void vprintf(const char *format, va_list args) {
                     break;
                 }
 
+                case 'u': { // Unsigned Integer
+                    int value = va_arg(args, int);
+                    utoa((uint64_t) value, buffer, 10);
+                    puts(buffer);
+                    break;
+                }
+
                 case 's': { // String
                     const char *str = va_arg(args, const char *);
                     puts(str);
@@ -89,6 +96,10 @@ void vprintf(const char *format, va_list args) {
                 }
             } 
         } else {
+            // Newline should also carraige return
+            if (*format == '\n') {
+                putc('\r');
+            }
             putc(*format);
         }
         format++;
@@ -117,6 +128,14 @@ void vsnprintf(char* buffer, size_t n, const char *format, va_list args) {
                         bufferIdx++;
                         value = -value;
                     }
+                    utoa((uint64_t) value, temp_buffer, 10);
+                    buffer[bufferIdx] = *temp_buffer;
+                    bufferIdx += strlen(temp_buffer);
+                    break;
+                }
+
+                case 'u': {
+                    int value = va_arg(args, int);
                     utoa((uint64_t) value, temp_buffer, 10);
                     buffer[bufferIdx] = *temp_buffer;
                     bufferIdx += strlen(temp_buffer);

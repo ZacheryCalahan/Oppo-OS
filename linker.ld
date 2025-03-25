@@ -1,6 +1,6 @@
 ENTRY(start);
  
-. = 0x80000000;
+. = 0x80000000; /* Start address of RAM */
  
 SECTIONS {
 	/* Include entry point at start of binary */

@@ -12,4 +12,7 @@ char* strcat(char *dst, const char *src);
 // Returns the length of a string
 uint32_t strlen(char *a);
 
+// Checks if two strings are equal
+uint32_t strcmp(char *a, char *b); 
+
 #endif
