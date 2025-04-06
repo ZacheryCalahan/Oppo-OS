@@ -5,8 +5,8 @@
 #define PCI_BASE        0x30000000
 
 // Kernel Map
-#define KERNEL_HEAP_START       0x80100000
-#define KERNEL_HEAP_END         0x80FFFFFF
+#define KERNEL_HEAP_START       0x0000000081000000
+#define KERNEL_HEAP_END         0x0000000090000000 // 240 MiB
 
 
 

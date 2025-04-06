@@ -1,8 +1,8 @@
 // Handler of the mtvec stuffs.
 #include <stdint.h>
-#include "riscv.h" // Header file for RISC-V specific implementations
+#include "headers/riscv.h" // Header file for RISC-V specific implementations
 #include "headers/trap.h"
-#include "stdlib/headers/stdio.h"
+#include "../klib/headers/stdio.h"
 
 void init_trap_handler() {
     // Enable global interrupts
@@ -34,7 +34,8 @@ void trap_handler() {
             case EXTERNAL_INTERRUPT: handle_external_interrupt(); break;
             case SOFTWARE_INTERRUPT: printf("Software Interrupt: %d\n", irq); break;
             default: {
-                printf("Unhandled Interrupt of \"%d\". Halting.\n"); while (1);
+                printf("Unhandled Interrupt of \"%x\". Halting.\n", irq); 
+                while (1);
             }
         }
     } else {
@@ -44,7 +45,7 @@ void trap_handler() {
         } else if (cause == ENVIROMENT_CALL_U) {
             handle_syscall(epc);
         } else {
-            puts("Unhandled Exception! Halting!\n");
+            printf("Unhandled Exception: 0x%x at 0x%x\n", cause, epc);
             while(1);
         }
     }
@@ -55,17 +56,18 @@ void trap_handler() {
 }
 
 void handle_timer_interrupt() {
-    puts("timer!\n");
+    printf("timer!\n");
 }
 
 void handle_external_interrupt() {
-    puts("external int!\n");
+    printf("external int!\n");
 }
 
 void handle_illegal_instruction(uint64_t epc) {
-    puts("Illegal instruction @\n");
+    printf("Illegal instruction @%x\n", epc);
+    while (1);
 }
 
 void handle_syscall(uint64_t epc) {
-    puts("Syscall!\n");
+    printf("Syscall!\n");
 }

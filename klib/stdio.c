@@ -1,5 +1,5 @@
 #include "headers/stdio.h"
-#include "../../drivers/headers/uart.h"
+#include "../drivers/headers/uart.h"
 
 void putc(const char c) {
     uart_transmit(c);
@@ -182,3 +182,4 @@ void vsnprintf(char* buffer, size_t n, const char *format, va_list args) {
         format++;
     }
 }
+

@@ -1,5 +1,5 @@
 #include "headers/stdlib.h"
-#include "../headers/memlayout.h"
+#include "../kernel/headers/memlayout.h"
 
 #define PAGE_SIZE 4096
 
