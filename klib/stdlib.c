@@ -1,5 +1,4 @@
 #include "headers/stdlib.h"
-#include "../kernel/headers/memlayout.h"
 
 #define PAGE_SIZE 4096
 
@@ -9,7 +8,9 @@ typedef struct Page {
 
 Page *free_list = NULL;
 
-static uint64_t heap_top = KERNEL_HEAP_START;
+#define KERNEL_HEAP_END 0x80500000
+
+static uint64_t heap_top = 0x80400000;
 
 
 /**

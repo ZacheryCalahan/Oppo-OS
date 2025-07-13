@@ -1,37 +1,55 @@
-#include <stdint.h>
 #include "headers/kernel.h"
 #include "../klib/headers/string.h"
-#include "../klib/headers/stdio.h"
 #include "../klib/headers/stdlib.h"
-#include "headers/trap.h"
-#include "headers/riscv.h"
+#include "../arch/headers/trap.h"
+#include "headers/proc.h"
+
+#include <stdint.h>
+
+struct process *proc_a;
+struct process *proc_b;
+
+void delay(void) {
+	for (int i = 0; i < 30000000; i++) {
+		__asm__ __volatile__("nop");
+	}
+}
+
+void proc_a_entry(void) {
+	printf("Starting process A\n");
+	while (1) {
+		putc('A');
+		yield();
+		delay();
+	}
+}
+
+void proc_b_entry(void) {
+    printf("starting process B\n");
+    while (1) {
+        putc('B');
+        yield();
+    }
+}
 
 void kmain(void) {
-	// Get the address of the device tree and parse it. This must be done first after entering the 
-	// kernel, with ABSOLUTELY no calls prior to ensure that the register isn't overwritten.
-	uint64_t fdt_addr = r_a1();
-	klog("Kernel initialization", INFO);
-	
-	// Enable CPU Features
+
+	// Initialize kernel
 	init_trap_handler();
+	init_memory(0x80400000, 0x80500000);
+	init_proc();
 
-	// Initialize the Heap for use (page allocator)
-	init_memory(KERNEL_HEAP_START, KERNEL_HEAP_END);
-
-	// Initialize all the drivers we need here.
+	// Test procs
+	proc_a = create_process((uint64_t) proc_a_entry);
+	proc_b = create_process((uint64_t) proc_b_entry);
+	yield();
 	
-	// Hang, as kernel has nothing left to do.
-	while(1);
-	return;
-}
+	
+	// Power save here when nothing else can be done.
+	while(1) {
+		asm volatile("wfi");
+	}
 
-void panic() {
-	printf("Kernel panic!");
-	// Hang
-	while(1);
+	// Should never reach, but for sanity.
+	PANIC("Kernel end!");
 }
-
-void klog(char* log, enum LogType type) {
-	printf("[%s\033[1;39m] | %s\n", log_type_strings[type], log);
-}
-

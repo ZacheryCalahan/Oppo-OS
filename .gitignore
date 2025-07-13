@@ -1,4 +1,3 @@
 *.o
 kernel.elf
-misc/resources.md
 .vscode/

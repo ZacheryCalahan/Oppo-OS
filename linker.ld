@@ -1,5 +1,5 @@
 SECTIONS {
-	. = 0x80000000; /* Start of DRAM */
+	. = 0x80100000; /* Start of DRAM */
 
 	/* Include entry point at start of binary */
 	.text : ALIGN(4K) {
