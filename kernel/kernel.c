@@ -33,11 +33,16 @@ void proc_b_entry(void) {
 }
 
 void kmain(void) {
-
+	printf("\n\n");
 	// Initialize kernel
 	init_memory();
-	init_trap_handler();
 	init_proc();
+	init_trap_handler();
+	
+	// Test interrupt
+	//asm volatile ("unimp");
+
+	
 
 	// Test procs
 	printf("Processes created: Test\n");

@@ -13,9 +13,9 @@ struct process *current_proc;
 struct process *idle_proc; // Process of the kernel, denoted by id 0.
 
 __attribute__((naked))
-__attribute__((align(8))) // I sincerely doubt this is needed, but god damn am I desperate for ANYTHING to work. 
 void switch_context(uint64_t *prev_sp, uint64_t *next_sp) {
     __asm__ __volatile__ (
+        
         // Save callee-saved registers onto the current process's stack.
         "addi sp, sp, -13 * 8\n" // Allocate space for 13 64-bit (8 byte) registers
         "sd ra,  0  * 8(sp)\n"   
@@ -34,7 +34,7 @@ void switch_context(uint64_t *prev_sp, uint64_t *next_sp) {
 
         // Switch the stack pointer.
         "sd sp, (a0)\n"         // *prev_sp = sp;
-        "ld sp, (a1)\n"         // Switch stack pointer (sp) here
+        "ld sp, (a1)\n"         // Switch stack pointer (sp) here (Next process's stack)
 
         // Restore callee-saved registers from the next process's stack.
         "ld ra,  0  * 8(sp)\n"  

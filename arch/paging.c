@@ -18,6 +18,9 @@ void map_page(uint64_t *root_table, uint64_t vaddr, uint64_t paddr, uint32_t fla
         PANIC("unaligned paddr %x", paddr);
     }
 
+    if (flags & 0xe == 0) {
+        PANIC("Attempted map with no permissions!");
+    }
     // NOTE: This assumes that we want the smallest granularity of page size, 4096B
 
     uint64_t vpn2 = (vaddr >> VPN2_SHIFT) & VPN_MASK; // Retrieve the virtual page number for table 2

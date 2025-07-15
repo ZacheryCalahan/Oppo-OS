@@ -15,13 +15,13 @@
 #define PAGE_D      (1 << 7)    // Dirty
 
 #define PAGE_SHIFT  12
-#define VPN_SHIFT   9
 #define VPN_MASK    0x1ff
-
 #define VA_BITS     39
 #define VPN2_SHIFT  30
 #define VPN1_SHIFT  21
 #define VPN0_SHIFT  12
+
+
 
 void map_page(uint64_t *root_table, uint64_t vaddr, uint64_t paddr, uint32_t flags);
 

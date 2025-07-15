@@ -11,7 +11,7 @@ void kernel_trap_context_save(void) {
     __asm__ __volatile__(
         // Retrieve the kernel stack of the running process from sscratch
         "csrrw sp, sscratch, sp\n"
-
+        //"csrw sscratch, sp\n"
         "addi sp, sp, -8 * 31\n"
         "sd ra,  8 * 0(sp)\n"
         "sd gp,  8 * 1(sp)\n"
@@ -46,7 +46,7 @@ void kernel_trap_context_save(void) {
 
         // Retrieve and save the sp at the time of exception
         "csrr a0, sscratch\n"
-        "sw a0, 8 * 30(sp)\n"
+        "sd a0, 8 * 30(sp)\n"
 
         // Reset the kernel stack.
         "addi a0, sp, 8 * 31\n"
