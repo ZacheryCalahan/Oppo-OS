@@ -4,7 +4,10 @@
 #include <stdint.h>
 #include <stddef.h>
 
-void init_memory(uint64_t heap_start, uint64_t heap_end);
+#define PAGE_SIZE 4096
+extern char __free_ram[], __free_ram_end[];
+
+void init_memory();
 void *kmalloc(size_t size);
 void* kalloc(void);
 void kfree(void *ptr);

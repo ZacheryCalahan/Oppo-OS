@@ -35,15 +35,18 @@ void proc_b_entry(void) {
 void kmain(void) {
 
 	// Initialize kernel
+	init_memory();
 	init_trap_handler();
-	init_memory(0x80400000, 0x80500000);
 	init_proc();
 
 	// Test procs
+	printf("Processes created: Test\n");
 	proc_a = create_process((uint64_t) proc_a_entry);
 	proc_b = create_process((uint64_t) proc_b_entry);
+	printf("Kernel -> Scheduler\n");
 	yield();
 	
+	PANIC("Exited out of scheduler!?");
 	
 	// Power save here when nothing else can be done.
 	while(1) {

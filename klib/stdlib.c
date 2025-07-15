@@ -1,6 +1,5 @@
 #include "headers/stdlib.h"
-
-#define PAGE_SIZE 4096
+#include "headers/stdio.h"
 
 typedef struct Page {
     struct Page *next;
@@ -8,9 +7,8 @@ typedef struct Page {
 
 Page *free_list = NULL;
 
-#define KERNEL_HEAP_END 0x80500000
-
-static uint64_t heap_top = 0x80400000;
+static uint64_t heap_top = (uint64_t) __free_ram;
+static uint64_t KERNEL_HEAP_END = (uint64_t) __free_ram_end;
 
 
 /**
@@ -24,12 +22,14 @@ static uint64_t heap_top = 0x80400000;
  * @param heap_end The ending address of the heap.
  */
 
-void init_memory(uint64_t heap_start, uint64_t heap_end) {
-    for (uint64_t addr = heap_start; addr < heap_end; addr += PAGE_SIZE) {
+void init_memory() {
+    for (uint64_t addr = (uint64_t) __free_ram; addr < (uint64_t) __free_ram_end; addr += PAGE_SIZE) {
         Page *page = (Page*)addr;
         page -> next = free_list;
         free_list = page;
     }
+
+    printf("Start/End of kernel RAM:\n\t0x%x\n\t0x%x\n", heap_top, KERNEL_HEAP_END);
 }
 
 /**
@@ -47,6 +47,9 @@ void* kalloc() {
     }
     Page *page = free_list;
     free_list = free_list -> next;
+
+    // Clean page of data
+    memset(page, 0, PAGE_SIZE);
     return (void*) page;
 }
 

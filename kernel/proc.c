@@ -1,5 +1,8 @@
 #include "headers/proc.h"
 #include "headers/kernel.h"
+#include "../klib/headers/stdlib.h"
+#include "../klib/headers/stdio.h"
+#include "../arch/headers/paging.h" // Must be changed if HAL is implemented.
 #include <stddef.h>
 
 #define PROCS_MAX 8
@@ -7,13 +10,14 @@
 #define PROC_RUNNABLE 1
 
 struct process *current_proc;
-struct process *idle_proc;
+struct process *idle_proc; // Process of the kernel, denoted by id 0.
 
 __attribute__((naked))
+__attribute__((align(8))) // I sincerely doubt this is needed, but god damn am I desperate for ANYTHING to work. 
 void switch_context(uint64_t *prev_sp, uint64_t *next_sp) {
     __asm__ __volatile__ (
         // Save callee-saved registers onto the current process's stack.
-        "addi sp, sp, -13 * 8\n" 
+        "addi sp, sp, -13 * 8\n" // Allocate space for 13 64-bit (8 byte) registers
         "sd ra,  0  * 8(sp)\n"   
         "sd s0,  1  * 8(sp)\n"
         "sd s1,  2  * 8(sp)\n"
@@ -46,23 +50,28 @@ void switch_context(uint64_t *prev_sp, uint64_t *next_sp) {
         "ld s9,  10 * 8(sp)\n"
         "ld s10, 11 * 8(sp)\n"
         "ld s11, 12 * 8(sp)\n"
-        "addi sp, sp, 13 * 8\n"
+        "addi sp, sp, 13 * 8\n" // Update `sp` after pop of 13 64-bit (8 byte) registers from the stack
         "ret\n"
     );
 }
 
 struct process procs[PROCS_MAX];
 
+/*
+    Create the kernel process within the scheduler as the idle process.
+*/
 void init_proc() {
     idle_proc = create_process((uint64_t) NULL);
 	idle_proc->pid = 0;
     current_proc = idle_proc;
 }
 
+extern char __kernel_base[];
+
 struct process *create_process(uint64_t pc) {
     struct process *proc = NULL;
-    int i;
-    for (i = 0; i < PROCS_MAX; i++) {
+    int i; // Process slot
+    for (i = 0; i < PROCS_MAX; i++) { // Search for empty process slot
         if (procs[i].state == PROC_UNUSED) {
             proc = &procs[i];
             break;
@@ -73,7 +82,7 @@ struct process *create_process(uint64_t pc) {
         PANIC("No free process slots!");
     }
 
-    // Stack callee-saved registers
+    // Initialize processes stack callee-saved registers for context switching (saved on call from process)
     uint64_t *sp = (uint64_t *) (&proc->stack[sizeof(proc->stack)]);
     *--sp = 0;                      // s11
     *--sp = 0;                      // s10
@@ -89,13 +98,29 @@ struct process *create_process(uint64_t pc) {
     *--sp = 0;                      // s0
     *--sp = (uint64_t) pc;          // ra
 
-    // Init fields
-    proc->pid = i + 1;
-    proc->state = PROC_RUNNABLE;
     proc->sp = (uint64_t) sp;
+
+    // Create a page table (this is the root table for the process)
+    uint64_t *page_table = (uint64_t *) kalloc(); // Allocate one page to the page tables
+
+    // Kernel pages
+    for (uint64_t paddr = (uint64_t) __kernel_base; 
+        paddr < (uint64_t) __free_ram_end; paddr += PAGE_SIZE) {
+        map_page(page_table, paddr, paddr, PAGE_R | PAGE_W | PAGE_X);
+    }
+
+    proc->page_table = page_table;
+        
+    // Init remaining struct members
+    proc->pid = i + 1; // PID is always the current process slot + 1
+    proc->state = PROC_RUNNABLE;
+
     return proc;
 }
 
+/*
+    Pass control to the scheduler
+*/
 void yield(void) {
     // Search for a runnable process
     struct process *next = idle_proc;
@@ -109,20 +134,27 @@ void yield(void) {
 
     // In case of no runnable process other than the current one, just return to current process.
     if (next == current_proc) {
+        printf("No next task!\n");
         return;
     }
 
-    // Reset the kernel stack for exception handling
-    __asm__ __volatile__ (
-        "csrw sscratch, %[sscratch]\n"
-        :
-        : [sscratch] "r" ((uint64_t) &next->stack[sizeof(next->stack)])
-    );
-
-    // Context switch
+    // Context Switch here
     struct process *prev = current_proc;
     current_proc = next;
+
+    // Reset the kernel stack for trap handling and switch top level page table pointer (satp) to next process
+    __asm__ __volatile__ (
+        "sfence.vma\n"
+        "csrw satp, %[satp]\n"
+        "sfence.vma\n"
+        "csrw sscratch, %[sscratch]\n"
+        :
+        : [satp] "r" (SATP_SV39 | ((uint64_t) (next->page_table) / PAGE_SIZE)), // Stores the PPN (physical address / page size) to `satp`, along with sv39 mode.
+          [sscratch] "r" ((uint64_t) &next->stack[sizeof(next->stack)])
+    );
+    
     switch_context(&prev->sp, &next->sp);
+
 
 }
 

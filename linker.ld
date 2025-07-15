@@ -1,9 +1,10 @@
 SECTIONS {
-	. = 0x80100000; /* Start of DRAM */
+	. = 0x80200000; /* expected address after OpenSBI */
+	__kernel_base = .;
 
-	/* Include entry point at start of binary */
+	
 	.text : ALIGN(4K) {
-		KEEP(*(.init));
+		KEEP(*(.init)); /* Include entry point at start of binary */
 		*(.text);
 	}
 	.bss : ALIGN(4K) {
@@ -30,4 +31,15 @@ SECTIONS {
     	*(.riscv.attributes)
     	*(.comment)
   	}
+
+	/* Stack */
+	. = ALIGN(4);
+	. += 128 * 1024; /* 128KB */
+	__stack_top = .;
+
+	/* Kernel RAM */
+	. = ALIGN(4096);
+	__free_ram = .;
+	. += 4 * 1024 * 1024; /* 4MB */
+	__free_ram_end = .;
 }
