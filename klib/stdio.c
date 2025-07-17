@@ -1,8 +1,14 @@
 #include "headers/stdio.h"
 #include "../drivers/headers/uart.h"
+#include "../drivers/headers/sbi.h"
 
 void putc(const char c) {
+    #ifdef SBI_H
+    sbi_call(c, 0, 0, 0, 0, 0, 0, 1); // console putchar system call
+    #else
     uart_transmit(c);
+    #endif
+
 }
 
 void puts(const char *str) {
@@ -64,7 +70,7 @@ void vprintf(const char *format, va_list args) {
                 }
 
                 case 'x': { // Hexadecimal
-                    unsigned int value = va_arg(args, unsigned int);
+                    uint64_t value = va_arg(args, uint64_t);
                     utoa(value, buffer, 16);
                     puts(buffer);
                     break;

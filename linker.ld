@@ -33,7 +33,7 @@ SECTIONS {
   	}
 
 	/* Stack */
-	. = ALIGN(4);
+	. = ALIGN(16);
 	. += 128 * 1024; /* 128KB */
 	__stack_top = .;
 

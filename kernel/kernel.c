@@ -3,6 +3,7 @@
 #include "../klib/headers/stdlib.h"
 #include "../arch/headers/trap.h"
 #include "headers/proc.h"
+#include "../arch/headers/paging.h"
 
 #include <stdint.h>
 
@@ -36,8 +37,10 @@ void kmain(void) {
 	printf("\n\n");
 	// Initialize kernel
 	init_memory();
-	init_proc();
 	init_trap_handler();
+	init_proc();
+	
+	
 	
 	// Test interrupt
 	//asm volatile ("unimp");
@@ -54,10 +57,7 @@ void kmain(void) {
 	PANIC("Exited out of scheduler!?");
 	
 	// Power save here when nothing else can be done.
-	while(1) {
-		asm volatile("wfi");
-	}
-
+	
 	// Should never reach, but for sanity.
 	PANIC("Kernel end!");
 }

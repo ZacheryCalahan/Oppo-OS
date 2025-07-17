@@ -1,6 +1,6 @@
 .global start
-.section .init
 
+.section .init
 start:
 	/* Setup stack */
 	la sp, stack_top

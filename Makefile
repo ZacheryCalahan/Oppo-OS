@@ -11,10 +11,10 @@ OBJCPY= ~/opt/cross-riscv/bin/riscv64-elf-objcopy
 CFLAGS = -Wall -Wextra -mcmodel=medany -ffreestanding -g
 LFLAGS = -T linker.ld -nostdlib -o kernel.elf
 
-QEMUOPTS = -machine virt -cpu rv64,sv39=on -bios default 
+QEMUOPTS = -machine virt -bios default 
 QEMUOPTS += -device virtio-gpu-pci -m 1G # 1 Gibibytes of RAM
 QEMUOPTS += -monitor mon:stdio
-#QEMUOPTS += -d unimp,guest_errors,int,cpu_reset -D qemu.log # Specific to debugging traps, comment when not in use. (MAKES LARGE FILES!)
+QEMUOPTS += -d unimp,guest_errors,int,cpu_reset -D qemu.log # Specific to debugging traps, comment when not in use. (MAKES LARGE FILES!)
 
 
 generate_dts: kernel.elf

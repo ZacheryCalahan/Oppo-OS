@@ -8,6 +8,7 @@
 #define PROCS_MAX 8
 #define PROC_UNUSED 0
 #define PROC_RUNNABLE 1
+#define PROC_USED 2
 
 struct process *current_proc;
 struct process *idle_proc; // Process of the kernel, denoted by id 0.
@@ -69,6 +70,7 @@ void init_proc() {
 extern char __kernel_base[];
 
 struct process *create_process(uint64_t pc) {
+    printf("Creating process for address: 0x%x\n", pc);
     struct process *proc = NULL;
     int i; // Process slot
     for (i = 0; i < PROCS_MAX; i++) { // Search for empty process slot
@@ -83,7 +85,7 @@ struct process *create_process(uint64_t pc) {
     }
 
     // Initialize processes stack callee-saved registers for context switching (saved on call from process)
-    uint64_t *sp = (uint64_t *) (&proc->stack[sizeof(proc->stack)]);
+    uint64_t *sp = (uint64_t *) &proc->stack[sizeof(proc->stack)];
     *--sp = 0;                      // s11
     *--sp = 0;                      // s10
     *--sp = 0;                      // s9
@@ -108,6 +110,7 @@ struct process *create_process(uint64_t pc) {
         paddr < (uint64_t) __free_ram_end; paddr += PAGE_SIZE) {
         map_page(page_table, paddr, paddr, PAGE_R | PAGE_W | PAGE_X);
     }
+    // map_page(idle_proc->page_table, 0x10000000, 0x10000000, PAGE_V | PAGE_R | PAGE_W);
 
     proc->page_table = page_table;
         
@@ -126,7 +129,8 @@ void yield(void) {
     struct process *next = idle_proc;
     for (int i = 0; i < PROCS_MAX; i++) {
         struct process *proc = &procs[(current_proc->pid + i) % PROCS_MAX];
-        if (proc->state == PROC_RUNNABLE && proc->pid > 0) {
+        
+        if (proc->state == PROC_RUNNABLE && proc->pid > 0) { // Do not run idle task
             next = proc;
             break;
         }
@@ -141,18 +145,25 @@ void yield(void) {
     // Context Switch here
     struct process *prev = current_proc;
     current_proc = next;
-
     // Reset the kernel stack for trap handling and switch top level page table pointer (satp) to next process
+    __asm__ __volatile__ (
+        
+        "csrw sscratch, %[sscratch]\n"
+        :
+        : [sscratch] "r" ((uint64_t) &next->stack[sizeof(next->stack)]) // Holds the sp for the context to resume under
+    );
+    
+    
+    uint64_t new_satp = (SATP_SV39 | (uint64_t) next->page_table / PAGE_SIZE);
+
     __asm__ __volatile__ (
         "sfence.vma\n"
         "csrw satp, %[satp]\n"
         "sfence.vma\n"
-        "csrw sscratch, %[sscratch]\n"
         :
-        : [satp] "r" (SATP_SV39 | ((uint64_t) (next->page_table) / PAGE_SIZE)), // Stores the PPN (physical address / page size) to `satp`, along with sv39 mode.
-          [sscratch] "r" ((uint64_t) &next->stack[sizeof(next->stack)])
+        : [satp] "r" ((uint64_t) new_satp) // Stores the PPN (physical address / page size) to `satp`, along with sv39 mode.
     );
-    
+
     switch_context(&prev->sp, &next->sp);
 
 
