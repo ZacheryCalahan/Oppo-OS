@@ -17,4 +17,7 @@ struct sbiret sbi_call(uint64_t arg0,
                        uint64_t fid,
                        uint64_t eid);
 
+
+struct sbiret sbi_putc(const char c);
+long sbi_getc(void); 
 #endif SBI_H

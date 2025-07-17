@@ -8,10 +8,15 @@
 #define PROCS_MAX 8
 #define PROC_UNUSED 0
 #define PROC_RUNNABLE 1
-#define PROC_USED 2
+#define PROC_EXITED 2
 
 struct process *current_proc;
 struct process *idle_proc; // Process of the kernel, denoted by id 0.
+struct process procs[PROCS_MAX];
+
+extern char __kernel_base[];
+#define USER_BASE 0x1000000
+
 
 __attribute__((naked))
 void switch_context(uint64_t *prev_sp, uint64_t *next_sp) {
@@ -56,21 +61,28 @@ void switch_context(uint64_t *prev_sp, uint64_t *next_sp) {
     );
 }
 
-struct process procs[PROCS_MAX];
+__attribute__((naked))
+void user_entry(void) {
+    __asm__ __volatile__ (
+        "csrw sepc, %[sepc]\n"
+        "csrw sstatus, %[sstatus]\n"
+        "sret\n"
+        :
+        : [sepc] "r" (USER_BASE),
+          [sstatus] "r" (SSTATUS_SPIE)
+    );
+}
 
 /*
     Create the kernel process within the scheduler as the idle process.
 */
 void init_proc() {
-    idle_proc = create_process((uint64_t) NULL);
+    idle_proc = create_process(NULL, 0);
 	idle_proc->pid = 0;
     current_proc = idle_proc;
 }
 
-extern char __kernel_base[];
-
-struct process *create_process(uint64_t pc) {
-    printf("Creating process for address: 0x%x\n", pc);
+struct process *create_process(const void *image, size_t image_size) {
     struct process *proc = NULL;
     int i; // Process slot
     for (i = 0; i < PROCS_MAX; i++) { // Search for empty process slot
@@ -98,19 +110,32 @@ struct process *create_process(uint64_t pc) {
     *--sp = 0;                      // s2
     *--sp = 0;                      // s1
     *--sp = 0;                      // s0
-    *--sp = (uint64_t) pc;          // ra
+    *--sp = (uint64_t) user_entry;  // ra
 
     proc->sp = (uint64_t) sp;
 
     // Create a page table (this is the root table for the process)
     uint64_t *page_table = (uint64_t *) kalloc(); // Allocate one page to the page tables
 
-    // Kernel pages
+    // Map kernel pages
     for (uint64_t paddr = (uint64_t) __kernel_base; 
         paddr < (uint64_t) __free_ram_end; paddr += PAGE_SIZE) {
         map_page(page_table, paddr, paddr, PAGE_R | PAGE_W | PAGE_X);
     }
-    // map_page(idle_proc->page_table, 0x10000000, 0x10000000, PAGE_V | PAGE_R | PAGE_W);
+    
+    // Map user pages
+    for (uint64_t off = 0; off < image_size; off += PAGE_SIZE) {
+        uint64_t page = (uint64_t) kalloc();
+
+        // Handle case where the data to be copied is small than the page size
+        size_t remaining = image_size - off;
+        size_t copy_size = PAGE_SIZE <= remaining ? PAGE_SIZE : remaining;
+
+        // Fill and map the page
+        memcpy((void *) page, image + off, copy_size);
+        map_page(page_table, USER_BASE + off, page, PAGE_U | PAGE_R | PAGE_W | PAGE_X);
+    }
+
 
     proc->page_table = page_table;
         
@@ -138,7 +163,6 @@ void yield(void) {
 
     // In case of no runnable process other than the current one, just return to current process.
     if (next == current_proc) {
-        printf("No next task!\n");
         return;
     }
 
@@ -169,3 +193,8 @@ void yield(void) {
 
 }
 
+void proc_exit(void) {
+    printf("Process %d exited\n", current_proc->pid);
+    current_proc->state = PROC_EXITED;
+    yield();
+}

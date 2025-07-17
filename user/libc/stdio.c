@@ -1,14 +1,6 @@
 #include "headers/stdio.h"
-#include "../drivers/headers/uart.h"
-#include "../drivers/headers/sbi.h"
+#include "../headers/user.h"
 
-long getc() {
-    return sbi_getc();
-}
-
-void putc(const char c) {
-    sbi_putc(c);
-}
 
 void puts(const char *str) {
     while (*str != '\0') {

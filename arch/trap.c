@@ -1,8 +1,11 @@
 #include "headers/trap.h"
 #include "../kernel/headers/kernel.h"
+#include "../klib/headers/stdio.h"
+#include "../kernel/headers/proc.h"
 
 #include <stdint.h>
 
+#define SCAUSE_ECALL 8
 
 // 64bit only!
 __attribute__((naked))
@@ -141,10 +144,48 @@ void init_trap_handler() {
     WRITE_CSR(stvec, (uint64_t) kernel_trap_context_save);
 }
 
+void handle_syscall(struct trap_frame *f) {
+    switch (f->a3) {
+        case SYS_PUTC: {
+            putc(f->a0);
+            break;
+        }
+
+        case SYS_GETC: {
+            while (1) {
+                long c = getc();
+                if (c >= 0) {
+                    f->a0 = c;
+                    break;
+                }
+
+                yield();
+            }
+            break;
+        }
+
+        case SYS_EXIT: {
+            proc_exit();
+            PANIC("Unreachable!");
+        }
+
+        default:
+            PANIC("Unexpected syscall: 0x%x\n", f->a3);
+    }
+}
+
 void handle_trap(struct trap_frame *f) {
     uint64_t scause = READ_CSR(scause);
     uint64_t stval = READ_CSR(stval);
     uint64_t user_pc = READ_CSR(sepc);
 
-    PANIC("Unexpected trap: \n\tscause=0x%x\n\tstval=0x%x\n\tsepc=0x%x\n", scause, stval, user_pc);
+    if (scause == SCAUSE_ECALL) {
+        handle_syscall(f);
+        user_pc += 4;
+    } else {
+        PANIC("Unexpected trap: \n\tscause=0x%x\n\tstval=0x%x\n\tsepc=0x%x\n", scause, stval, user_pc);
+    }
+
+    WRITE_CSR(sepc, user_pc);
 }
+

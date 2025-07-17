@@ -1,4 +1,5 @@
 #include "headers/sbi.h"
+#include "../kernel/headers/kernel.h"
 
 struct sbiret sbi_call(uint64_t arg0,
     uint64_t arg1,
@@ -26,6 +27,15 @@ struct sbiret sbi_call(uint64_t arg0,
         : "memory"
     );
 
-    return (struct sbiret) {.error = a0, .value = a1};
-        
+    return (struct sbiret) {.error = a0, .value = a1}; 
+}
+// Write a char to the console (uart)
+struct sbiret sbi_putc(const char c) {
+    return sbi_call(c, 0, 0, 0, 0, 0, 0, 0x1); // sbi_console_putchar(int ch);
+}
+
+// Read a char from the console (uart)
+long sbi_getc() {
+    struct sbiret ret = sbi_call(0, 0, 0, 0, 0, 0, 0, 0x2); // sbi_console_getchar(void);
+    return ret.error;
 }

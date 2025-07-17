@@ -13,6 +13,7 @@ void* kalloc(void);
 void kfree(void *ptr);
 void* memset(void *dest, int value, size_t n);
 void* kaligned_alloc(size_t alignment, size_t size);
+void* memcpy(void* dest, const void* src, size_t len);
 //void* realloc(void *ptr, size_t size); Implement this soon!
 
 #endif

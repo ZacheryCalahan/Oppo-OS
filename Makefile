@@ -4,18 +4,20 @@ OBJ = $(C_SOURCES:.c=.o)
 
 CC = ~/opt/cross-riscv/bin/riscv64-elf-gcc
 AS = ~/opt/cross-riscv/bin/riscv64-elf-as
-LN = ~/opt/cross-riscv/bin/riscv64-elf-ld
+LD = ~/opt/cross-riscv/bin/riscv64-elf-ld
 GDB= ~/opt/cross-riscv/bin/riscv64-elf-gdb
 OBJCPY= ~/opt/cross-riscv/bin/riscv64-elf-objcopy
 
 CFLAGS = -Wall -Wextra -mcmodel=medany -ffreestanding -g
 LFLAGS = -T linker.ld -nostdlib -o kernel.elf
 
-QEMUOPTS = -machine virt -bios default 
-QEMUOPTS += -device virtio-gpu-pci -m 1G # 1 Gibibytes of RAM
-QEMUOPTS += -monitor mon:stdio
-QEMUOPTS += -d unimp,guest_errors,int,cpu_reset -D qemu.log # Specific to debugging traps, comment when not in use. (MAKES LARGE FILES!)
+QEMUOPTS = -machine virt -bios default -m 1G # 1 Gibibytes of RAM
+#QEMUOPTS = -nographic
+#QEMUOPTS += -device virtio-gpu-pci 
+#QEMUOPTS += -monitor mon:stdio
+#QEMUOPTS += -d unimp,guest_errors,int,cpu_reset -D qemu.log # Specific to debugging traps, comment when not in use. (MAKES LARGE FILES!)
 
+################################### Build Targets  ###################################
 
 generate_dts: kernel.elf
 	@qemu-system-riscv64 $(QEMUOPTS) -kernel kernel.elf -machine dumpdtb=riscv64-virt.dtb
@@ -27,14 +29,19 @@ debug: kernel.elf
 	@qemu-system-riscv64 $(QEMUOPTS) -kernel kernel.elf -s -S &
 	$(GDB) kernel.elf 
 
-run: kernel.elf
+run: kernel.elf 
 	@qemu-system-riscv64 $(QEMUOPTS) -kernel kernel.elf 
+
+# I'm aware this may be scuffed, I'm wrapping my head around a better way to handle
+# stuff like this. Stay tuned!
+user/shell.bin.o:
+	$(MAKE) -C user
 
 build: kernel.elf
 	@echo "Built!"
 
-kernel.elf: ${OBJ} boot/entry.o
-	@$(LN) $^ $(LFLAGS)
+kernel.elf: ${OBJ} boot/entry.o user/shell.bin.o
+	@$(LD) $^ $(LFLAGS)
 	$(info ${OBJ})
 
 ################################### Wildcard Rules ###################################
@@ -51,5 +58,6 @@ clean:
 	@find . -type f -name '*.o' -delete
 	@find . -type f -name 'kernel.sym' -delete
 	@find . -type f -name '*.elf' -delete
-	@find . -type f -name 'kernel.bin' -delete
+	@find . -type f -name '*.bin' -delete
+	@find . -type f -name 'qemu.log' -delete
 	

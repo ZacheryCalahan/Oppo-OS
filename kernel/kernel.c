@@ -10,28 +10,7 @@
 struct process *proc_a;
 struct process *proc_b;
 
-void delay(void) {
-	for (int i = 0; i < 30000000; i++) {
-		__asm__ __volatile__("nop");
-	}
-}
-
-void proc_a_entry(void) {
-	printf("Starting process A\n");
-	while (1) {
-		putc('A');
-		yield();
-		delay();
-	}
-}
-
-void proc_b_entry(void) {
-    printf("starting process B\n");
-    while (1) {
-        putc('B');
-        yield();
-    }
-}
+extern char _binary_shell_bin_start[], _binary_shell_bin_size[];
 
 void kmain(void) {
 	printf("\n\n");
@@ -40,24 +19,9 @@ void kmain(void) {
 	init_trap_handler();
 	init_proc();
 	
-	
-	
-	// Test interrupt
-	//asm volatile ("unimp");
+	create_process(_binary_shell_bin_start, (size_t) _binary_shell_bin_size);
 
-	
-
-	// Test procs
-	printf("Processes created: Test\n");
-	proc_a = create_process((uint64_t) proc_a_entry);
-	proc_b = create_process((uint64_t) proc_b_entry);
-	printf("Kernel -> Scheduler\n");
 	yield();
 	
 	PANIC("Exited out of scheduler!?");
-	
-	// Power save here when nothing else can be done.
-	
-	// Should never reach, but for sanity.
-	PANIC("Kernel end!");
 }
