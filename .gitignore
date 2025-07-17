@@ -1,4 +1,4 @@
 *.o
 kernel.elf
 .vscode/
-qemu.log
+*.log
