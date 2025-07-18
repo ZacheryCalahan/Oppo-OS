@@ -31,6 +31,8 @@
 #define VIRTR_DRV_FEATURES_SEL_0    0x024   // (W) Flags the driver states can support (Write here to submit features supported).
 #define VIRTR_QUEUE_SEL_O           0x030   // (W) Selects the virtual queue.
 #define VIRTR_QUEUE_NUM_MAX_O       0x034   // (R) Returns the max number of elements of the queue the device is ready to process, or 0x0 if the queue is not available.
+#define VIRTR_QUEUE_ALIGN_O         0x03c   // (R) Tells device the alignment of the used queue
+#define VIRTR_QUEUE_PFN_O           0x040   // (R) Tells device of physical number of the first page to the queue
 #define VIRTR_QUEUE_NUM_O           0x038   // (W) Tells device of the number of elements (max elements) in the queue the driver will use.
 #define VIRTR_QUEUE_READY_O         0x044   // (RW) Writing 0x1 to this register notifies the device it can execute requests from the virtual queue. Reading this register returns the last value written to it.
 #define VIRTR_QUEUE_NOTIFY_O        0x050   // (W) Writing the this register notifies the device there are new buffers to process in a queue.
@@ -62,7 +64,7 @@
 // Flag indicating the descriptor is write-only
 #define VIRTQ_DESC_F_WRITE (1 << 1)
 // Flag indicating the buffer contains another descriptor
-#define VIRTA_DESC_F_NEXT (1 << 0)
+#define VIRTQ_DESC_F_NEXT (1 << 0)
 // Flag indicating that the driver has a stored table of indirect descriptors in memory for use by the device.
 #define VIRTQ_DESC_F_INDIRECT (1 << 2)
 
@@ -127,6 +129,16 @@ uint32_t virtio_reg_read32(unsigned offset);
 uint64_t virtio_reg_read64(unsigned offset);
 void virtio_reg_write32(unsigned offset, uint32_t value);
 void virtio_reg_fetch_and_or32(unsigned offset, uint32_t value);
+/*
+    Notify the device that there is a new request, where `desc_index` is the index
+    of the head descriptor of the new request.
+*/
+void virtq_kick(struct virt_queue *vq, int desc_index);
+/*
+    Check if there are requests being processed by the device
+*/
+int virtq_is_busy(struct virt_queue *vq);
+
 
 
 #endif

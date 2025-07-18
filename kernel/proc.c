@@ -116,7 +116,7 @@ struct process *create_process(const void *image, size_t image_size) {
     proc->sp = (uint64_t) sp;
 
     // Create a page table (this is the root table for the process)
-    uint64_t *page_table = (uint64_t *) kalloc(); // Allocate one page to the page tables
+    uint64_t *page_table = (uint64_t *) kalloc(1); // Allocate one page to the page tables
 
     // Map kernel pages
     for (uint64_t paddr = (uint64_t) __kernel_base; 
@@ -128,7 +128,7 @@ struct process *create_process(const void *image, size_t image_size) {
     
     // Map user pages
     for (uint64_t off = 0; off < image_size; off += PAGE_SIZE) {
-        uint64_t page = (uint64_t) kalloc();
+        uint64_t page = (uint64_t) kalloc(1);
 
         // Handle case where the data to be copied is small than the page size
         size_t remaining = image_size - off;

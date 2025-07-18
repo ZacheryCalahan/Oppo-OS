@@ -13,7 +13,7 @@ LFLAGS = -T linker.ld -nostdlib -o kernel.elf
 
 QEMUOPTS =  -machine virt -bios default -m 1G # 1 Gibibytes of RAM
 QEMUOPTS += -device virtio-gpu-pci -device virtio-blk-device,drive=drive0,bus=virtio-mmio-bus.0
-QEMUOPTS += -drive drive0,file=lorem.txt,format=raw=if=none
+QEMUOPTS += -drive id=drive0,file=lorem.txt,format=raw,if=none
 #QEMUOPTS += -monitor mon:stdio
 #QEMUOPTS += -d unimp,guest_errors,int,cpu_reset -D qemu.log # Specific to debugging traps, comment when not in use. (MAKES LARGE FILES!)
 

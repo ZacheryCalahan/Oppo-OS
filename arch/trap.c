@@ -150,7 +150,6 @@ void handle_syscall(struct trap_frame *f) {
             putc(f->a0);
             break;
         }
-
         case SYS_GETC: {
             while (1) {
                 long c = getc();
@@ -163,7 +162,6 @@ void handle_syscall(struct trap_frame *f) {
             }
             break;
         }
-
         case SYS_EXIT: {
             proc_exit();
             PANIC("Unreachable!");
