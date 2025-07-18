@@ -23,7 +23,7 @@ void main(void) {
 
         if (strcmp(cmdline, "hello") == 0) {
             printf("Hello world from shell!\n");
-        } if (strcmp(cmdline, "exit") == 0) {
+        } else if (strcmp(cmdline, "exit") == 0) {
             exit();
         } else {
             printf("Unknown command: %s\n", cmdline);

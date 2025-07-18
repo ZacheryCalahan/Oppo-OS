@@ -1,4 +1,5 @@
 *.o
-kernel.elf
+*.elf
 .vscode/
 *.log
+*.bin
