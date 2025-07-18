@@ -12,7 +12,7 @@ static uint64_t KERNEL_HEAP_END = (uint64_t) __free_ram_end;
 
 
 /**
- * Initialize the memory management system.
+ * Initialize the kernel memory management system.
  *
  * init_memory() sets up the memory management system by initializing
  * the free list with pages from the specified heap range. Each page
@@ -169,4 +169,12 @@ void* memcpy(void* dest, const void* src, size_t len) {
     return dest;
 }
 
+static inline int is_aligned(uint64_t value, uint64_t align) {
+    if (align == 0)
+        align = sizeof(void*);
+    return value % align == 0;
+}
 
+static inline uint64_t align_up(uint64_t value, uint64_t align) {
+    return (value + align - 1) & ~(align - 1);
+}

@@ -11,9 +11,9 @@ OBJCPY= ~/opt/cross-riscv/bin/riscv64-elf-objcopy
 CFLAGS = -Wall -Wextra -mcmodel=medany -ffreestanding -g
 LFLAGS = -T linker.ld -nostdlib -o kernel.elf
 
-QEMUOPTS = -machine virt -bios default -m 1G # 1 Gibibytes of RAM
-#QEMUOPTS = -nographic
-#QEMUOPTS += -device virtio-gpu-pci 
+QEMUOPTS =  -machine virt -bios default -m 1G # 1 Gibibytes of RAM
+QEMUOPTS += -device virtio-gpu-pci -device virtio-blk-device,drive=drive0,bus=virtio-mmio-bus.0
+QEMUOPTS += -drive drive0,file=lorem.txt,format=raw=if=none
 #QEMUOPTS += -monitor mon:stdio
 #QEMUOPTS += -d unimp,guest_errors,int,cpu_reset -D qemu.log # Specific to debugging traps, comment when not in use. (MAKES LARGE FILES!)
 
@@ -35,7 +35,7 @@ run: kernel.elf
 # I'm aware this may be scuffed, I'm wrapping my head around a better way to handle
 # stuff like this. Stay tuned!
 user/shell.bin.o:
-	$(MAKE) -C user
+	$(MAKE) -C user -B # Force to remake user apps
 
 build: kernel.elf
 	@echo "Built!"

@@ -3,6 +3,7 @@
 #include "../klib/headers/stdlib.h"
 #include "../klib/headers/stdio.h"
 #include "../arch/headers/paging.h" // Must be changed if HAL is implemented.
+#include "../drivers/headers/virtio.h"
 #include <stddef.h>
 
 #define PROCS_MAX 8
@@ -122,6 +123,8 @@ struct process *create_process(const void *image, size_t image_size) {
         paddr < (uint64_t) __free_ram_end; paddr += PAGE_SIZE) {
         map_page(page_table, paddr, paddr, PAGE_R | PAGE_W | PAGE_X);
     }
+
+    map_page(page_table, VIRTIO_PADDR, VIRTIO_PADDR, PAGE_R | PAGE_W); // Map virtio to kernel map
     
     // Map user pages
     for (uint64_t off = 0; off < image_size; off += PAGE_SIZE) {

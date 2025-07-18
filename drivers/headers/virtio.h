@@ -15,6 +15,10 @@
 #include <stdint.h>
 #include <stddef.h>
 
+// Kernel specific values
+
+#define PAGE_SIZE       4096        // Should probably be taken from klib/stdlib, but it'll be fine since PAGE_SIZE should never be changed from 4096.
+#define VIRTIO_PADDR    0x10001000  // Physical address of first VIRTIO MMIO region.
 // Device Status Registers (MMIO)
 
 #define VIRTR_MAGIC_O               0x000   // (R) 0x74726976 magic number for all virtio devices.
@@ -53,6 +57,7 @@
 #define VIRTIO_STATUS_NEEDS_RESET   64
 #define VIRTIO_STATUS_FAILED        128
 
+#define VIRTQ_ENTRY_NUM 16
 
 // Flag indicating the descriptor is write-only
 #define VIRTQ_DESC_F_WRITE (1 << 1)
@@ -66,12 +71,12 @@
 *   The descriptor area is a structure that holds data about a given buffer. These are intended to be an array
 *   within the virtio_queue.
 */
-typedef struct {
+struct virtq_desc {
     uint64_t addr;  // Address of the buffer.
     uint32_t len;   // Length of the buffer.
     uint16_t flags; // 0x0: read only 0x1: Another descriptor is in this buffer. 0x2: Buffer is write only. 0x4: Points to address of other table in memory containing descriptors.
     uint16_t next;  // If set (0x1) the data will continue in another buffer, to create a chain.
-} virtq_desc;
+} __attribute__((packed));
 
 // Flag indicating if the device should generate an interrupt on an added buffer.
 #define VIRTQ_AVAIL_F_NO_INTERRUPT (1 << 0)
@@ -79,19 +84,19 @@ typedef struct {
 /*
 *   A driver write only struct where the driver places descriptors for the device to consume.  
 */
-typedef struct {
+struct virtq_avail {
     uint16_t flags;                     // 0x0: Notify the driver (using interrupts). 0x1: Do not notify the driver.
     uint16_t idx;                       // Indicates where the driver would put the next descriptor entry in the avail ring ( modulo queue_size because it's circular).
-    uint16_t ring[/* Queue size */];    // Indexes to descriptors in the descriptor table for the device to consume.
-} virtq_avail;
+    uint16_t ring[VIRTQ_ENTRY_NUM];    // Indexes to descriptors in the descriptor table for the device to consume.
+} __attribute__((packed));
 
 /*
 *   A struct containing the used data from the device.
 */
-typedef struct {
+struct virtq_used_elem {
     uint32_t id;    // The index of start of used descriptor chain (or head of chained descriptors).
     uint32_t len;   // The total length of the descriptor chain which was used (written to) (or total length of all written buffers in a chain).
-} virtq_used_elem;
+} __attribute__((packed));
 
 // Flag indicating if the device should notify the driver of a changed buffer.
 #define VIRTQ_USED_F_NO_NOTIFY (1 << 0)
@@ -99,23 +104,29 @@ typedef struct {
 /*
 *   A device write only struct where the device returns the buffer to the driver.
 */
-typedef struct {
+struct virtq_used {
     uint16_t flags;                         // 0x0: Notify the driver (using interrupts). 0x1: Do not notify the driver.
     uint16_t idx;                           // Indicates where the driver would put the next descriptor entry in the avail ring ( modulo queue_size because it's circular).
-    virtq_used_elem ring[/* Queue size*/];
-} virtq_used;
-
-// Quantity of descriptors.
-#define VIRTQ_QUEUE_SIZE 128
+    struct virtq_used_elem ring[VIRTQ_ENTRY_NUM];
+} __attribute__((packed));
 
 /*
 *   Structure of the Virtual Queue. Must be allocated aligned to 4096 bytes.
 */
-typedef struct {
-    virtq_desc buffers[VIRTQ_QUEUE_SIZE]; // Descriptors for driver supplied buffers.
-    virtq_avail available;          // Metadata for available descriptors (Driver supplied).
-    uint8_t padding[4096 - (sizeof(virtq_desc) * VIRTQ_QUEUE_SIZE + sizeof(virtq_avail)) % 4096]; // Align to 4096 bytes
-    virtq_used used;                // Metadata for used descriptors (Device supplied).
-} virt_queue;
+struct virt_queue {
+    struct virtq_desc buffers[VIRTQ_ENTRY_NUM]; // Descriptors for driver supplied buffers.
+    struct virtq_avail avail;          // Metadata for available descriptors (Driver supplied).
+    struct virtq_used used __attribute__((aligned(PAGE_SIZE)));
+    uint32_t queue_index;
+    volatile uint16_t *used_index;
+    uint16_t last_used_index;
+} __attribute__((packed));
+
+struct virt_queue *virtq_init(unsigned index);
+uint32_t virtio_reg_read32(unsigned offset);
+uint64_t virtio_reg_read64(unsigned offset);
+void virtio_reg_write32(unsigned offset, uint32_t value);
+void virtio_reg_fetch_and_or32(unsigned offset, uint32_t value);
+
 
 #endif
