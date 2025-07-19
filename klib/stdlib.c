@@ -1,6 +1,10 @@
 #include "headers/stdlib.h"
 #include "headers/stdio.h"
 
+/*
+    Buddy allocator!
+*/
+
 typedef struct Page {
     struct Page *next;
 } Page;

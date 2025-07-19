@@ -6,7 +6,8 @@ Welcome to my hobby OS that I'm writing for the RISC-V architecture using qemu's
 2. Install qemu-system-riscv64
 3. Clone this repository
 4. Update the Makefile with the location to your cross compiler via the CC, AS, and LN variables.
-5. Run `make run` to compile, link, and run the binary in qemu
+5. Run `make generate_new_fat32` as QEMU expects a disk image called "disk.img". This command will auto generate a new FAT32 filesystem for the OS to use.
+6. Run `make run` to compile, link, and run the binary in qemu
 
 
 

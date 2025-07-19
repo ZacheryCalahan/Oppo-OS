@@ -13,8 +13,8 @@ LFLAGS = -T linker.ld -nostdlib -o kernel.elf
 
 QEMUOPTS =  -machine virt -bios default -m 1G # 1 Gibibytes of RAM
 QEMUOPTS += -device virtio-gpu-pci -device virtio-blk-device,drive=drive0,bus=virtio-mmio-bus.0
-QEMUOPTS += -drive id=drive0,file=lorem.txt,format=raw,if=none
-#QEMUOPTS += -monitor mon:stdio
+QEMUOPTS += -drive id=drive0,file=disk.img,if=none,format=raw # use fat_filesystem as a disk
+QEMUOPTS += -monitor mon:stdio
 #QEMUOPTS += -d unimp,guest_errors,int,cpu_reset -D qemu.log # Specific to debugging traps, comment when not in use. (MAKES LARGE FILES!)
 
 ################################### Build Targets  ###################################
@@ -24,6 +24,11 @@ generate_dts: kernel.elf
 	@dtc -I dtb -O dts riscv64-virt.dtb -o riscv64-virt.dts
 	@rm riscv64-virt.dtb
 	@mv riscv64-virt.dts misc/riscv64-virt.dts
+
+# Generate a 128MB FAT32 filesystem
+generate_new_fat32:
+	qemu-img create -f raw disk.img 128M
+	mkfs.fat -F 32 disk.img
 
 debug: kernel.elf
 	@qemu-system-riscv64 $(QEMUOPTS) -kernel kernel.elf -s -S &

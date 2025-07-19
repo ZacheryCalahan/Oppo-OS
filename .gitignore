@@ -3,3 +3,5 @@
 .vscode/
 *.log
 *.bin
+fat_filesystem/*
+*.img
