@@ -79,5 +79,7 @@ static inline uint64_t align_up(uint64_t value, uint64_t align) {
 }
 int order_for_pages(size_t pages);
 
-
+static inline uint32_t get_pages_from_bytes(uint64_t bytes) {
+    return (bytes + PAGE_SIZE - 1) / PAGE_SIZE;
+}
 #endif

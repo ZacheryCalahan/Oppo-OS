@@ -92,8 +92,8 @@ struct fsinfo {
     uint32_t trail_signature; // 0xAA550000
 } __attribute__((packed));
 
-static inline int is_eoc(uint32_t cluster) {
-    return cluster >= 0x0FFFFFF8;
+static inline int is_eoc(uint32_t fat_data) {
+    return fat_data >= 0x0FFFFFF8;
 }
 
 

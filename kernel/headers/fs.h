@@ -2,14 +2,15 @@
 #define FS_H
 
 #include <stddef.h>
+#include <stdint.h>
 
-#define FILES_MAX 2
-
-struct file {
+struct FILE {
     int in_use;
-    char name[100];
-    char data[4096];
-    size_t size;
+    uint64_t size;
+    char data[];
 };
+
+struct FILE *open_file(const char* path);
+void close_file(struct FILE *file);
 
 #endif

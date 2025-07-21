@@ -157,17 +157,16 @@ void file_name_to_8_3(const char* path, char* buf) {
     return;
 }
 
-
-
 void *fat32_get_file_by_path(const char* path, uint32_t *file_size) {
 
     // Start at root cluster
-    void* cluster = fat_get_cluster(root_dir_first_cluster);
+    uint32_t cluster_id = root_dir_first_cluster;
+    void* cluster = fat_get_cluster(cluster_id);
     struct dir_entry *entries = (struct dir_entry *) cluster;
     int pathDelimIdx = 0;
 
     
-    for (int dir_level = 0; dir_level < 3; dir_level++) { // 3 is arbitrary limit, remove later.
+    for (int dir_level = 0; dir_level < 3; dir_level++) { // 3 is arbitrary limit, remove later!
         // Get the current item of the path to search for
         char path_split[12];
         memset(path_split, 0, 12);
@@ -218,26 +217,57 @@ void *fat32_get_file_by_path(const char* path, uint32_t *file_size) {
                 // We found the current path item!
                 if (entry.attr & FILE_ATTR_SUB_DIR != 0) { // This is a subdir, continue down rabbit hole with next cluster
                     printf("Dir found!\n");
-                    uint32_t dir_cluster = entry.first_cluster_low | (entry.first_cluster_high << 16);
-                    // Should probably free the last cluster before setting cluster to be something new.
-                    kfree_order(cluster, order_for_pages(pages_per_cluster));
-                    cluster = fat_get_cluster(dir_cluster);
+                    cluster_id = entry.first_cluster_low | (entry.first_cluster_high << 16);
+                    kfree_order(cluster, order_for_pages(pages_per_cluster)); // Don't leak memory ya fool!
+                    cluster = fat_get_cluster(cluster_id);
                     break;
                 } else { // It's a file, assume we've reached the end!
                     printf("Returning the file...\n");
                     *file_size = entry.file_size;
                     uint32_t file_cluster = entry.first_cluster_low | (entry.first_cluster_high << 16);
-                    // This ASSUMES! that a file is a single cluster. Should fix for larger files.
-                    void* file_data = fat_get_cluster(file_cluster); 
+                    
+                    // Get the size of the file data
+                    uint32_t file_cluster_count = 0; // We need to ensure the whole file is returned, so count the clusters!
+                    uint32_t file_cluster_tmp = file_cluster;
+                    while (!is_eoc(file_cluster_tmp) && file_cluster_tmp < fat_entries) {
+                        file_cluster_count++;
+                        file_cluster_tmp = FAT[file_cluster_tmp];
+                    }
+                    printf("File uses %d clusters.\n", file_cluster_count);
+
+                    void* file_data = kalloc(((file_cluster_count * sectors_per_cluster * SECTOR_SIZE) + PAGE_SIZE - 1) / PAGE_SIZE);
+
+                    // Fill the data and return
+                    uint8_t* data_ptr = (uint8_t *) file_data;
+                    file_cluster_tmp = file_cluster;
+
+                    while (!is_eoc(file_cluster_tmp) && file_cluster_tmp < fat_entries) {
+                        void* cluster_data = fat_get_cluster(file_cluster_tmp);
+                        memcpy(data_ptr, cluster_data, sectors_per_cluster * SECTOR_SIZE);
+                        kfree_order(cluster_data, order_for_pages(pages_per_cluster));
+                        data_ptr += sectors_per_cluster * SECTOR_SIZE;
+                        file_cluster_tmp = FAT[file_cluster_tmp];
+                    }
 
                     return file_data;
                 }
             }
         }
+
+        // Traverse to the next cluster if file/dir not found in this cluster
+        if (is_eoc(FAT[cluster_id])) {
+            // No next cluster, so file does not exist!
+            *file_size = 0;
+            return NULL;
+        }
+
+        uint32_t new_cluster_id = FAT[cluster_id];
+        cluster_id = new_cluster_id;
+        cluster = (uint32_t *) fat_get_cluster(cluster_id);
     }
 
-
-    // Search each entry one by one until the current dir path hits, or out of entries in the cluster.
+    // How did we get here?
+    
 }
 
 
