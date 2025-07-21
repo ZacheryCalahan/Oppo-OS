@@ -11,6 +11,7 @@ struct FILE *open_file(const char* path) {
     // Find the file by the path
     uint32_t file_size = 0;
     void* file_data = fat32_get_file_by_path(path, &file_size);
+    
     if (file_data == NULL) {
         printf("File \"%s\" not found.\n", path);
         return NULL;

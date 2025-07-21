@@ -23,6 +23,10 @@ void kmain(void) {
 	init_fat32();
 
 	struct FILE *lorem = open_file("TEST/LOREM.TXT");
+	
+	if (lorem == NULL) {
+		PANIC("File struct is null?");
+	}
 
 	// Print the found file
 	printf("Printing file below: {\n\n%s\n}\n\n", lorem->data);

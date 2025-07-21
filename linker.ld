@@ -40,6 +40,6 @@ SECTIONS {
 	/* Kernel RAM */
 	. = ALIGN(4096);
 	__free_ram = .;
-	. += 4 * 1024 * 1024; /* 4MB */
+	. += 128 * 1024 * 1024; /* 128MB */
 	__free_ram_end = .;
 }
