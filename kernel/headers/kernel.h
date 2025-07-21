@@ -1,5 +1,5 @@
 #ifndef KERNEL_H
-#define KERNER_H
+#define KERNEL_H
 
 #include "../../klib/headers/stdio.h"
 
