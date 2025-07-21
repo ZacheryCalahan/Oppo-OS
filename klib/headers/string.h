@@ -2,9 +2,12 @@
 #define STRING_H
 
 #include <stdint.h>
+#include <stddef.h>
 
 // Returns a copy of a string
 char* strcpy(char *dst, const char *src);
+
+char* strncpy(char *dst, const char *src, size_t n);
 
 // Concatenates two strings
 char* strcat(char *dst, const char *src);

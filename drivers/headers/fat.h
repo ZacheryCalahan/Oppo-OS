@@ -2,7 +2,9 @@
 #define FAT_H
 
 #include <stdint.h>
+#include <stddef.h>
 
+// BPB reads are done in offsets, because who would EVER need to read an unaligned word. Pffftttttt...
 // Standard BPB
 #define BPB_JMP_BOOT                0x000
 #define BPB_OEM_NAME                0x003
@@ -58,6 +60,7 @@ struct mbr {
 #define FILE_ATTR_VOL_LABEL 0x08
 #define FILE_ATTR_SUB_DIR   0x10
 #define FILE_ATTR_ARCHIVE   0x20
+#define FILE_ATTR_DEVICE    0x40 // Technically this is our OS extension, as I believe this is not typical of FAT32
 #define FILE_ATTR_LFN_ENTRY 0x0F
 
 #define DIR_ATTR_LFN_ENTRY  0x0F
@@ -89,6 +92,21 @@ struct fsinfo {
     uint32_t trail_signature; // 0xAA550000
 } __attribute__((packed));
 
+static inline int is_eoc(uint32_t cluster) {
+    return cluster >= 0x0FFFFFF8;
+}
+
+
+
 void init_fat32(void);
+/**
+* Get a file by its absolute path.
+*
+* @param path The absolute path of the file.
+* @param file_size A buffer to hold the size of the returned file. Returns 0 on file not found.
+*
+* @return Pointer to the file if found, returns NULL on file not found.
+*/
+void *fat32_get_file_by_path(const char* path, uint32_t *file_size);
 
 #endif

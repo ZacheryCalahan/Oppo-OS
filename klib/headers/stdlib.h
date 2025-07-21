@@ -77,6 +77,7 @@ static inline int is_aligned(uint64_t value, uint64_t align) {
 static inline uint64_t align_up(uint64_t value, uint64_t align) {
     return (value + align - 1) & ~(align - 1);
 }
+int order_for_pages(size_t pages);
 
 
 #endif

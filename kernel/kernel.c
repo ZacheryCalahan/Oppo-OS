@@ -24,12 +24,16 @@ void kmain(void) {
 	virtio_blk_init();
 	init_fat32();
 
-	// char buf[SECTOR_SIZE];
-	// read_write_disk(buf, 0, 0);
-	// printf("first sector: %s\n", buf);
+	uint32_t file_size;
+	uint8_t* file = (uint8_t *) fat32_get_file_by_path("USER/USER", &file_size);
+	printf("File size: %d\n", file_size);
+	if (file == NULL) {
+		PANIC("File was null?");
+	}
 
-	// strcpy(buf, "hello from kernel!!!\n");
-	// read_write_disk(buf, 0, 1);
+	// Print the found file
+	printf("Printing file below: {\n%s\n}\n", file);
+
 	
 	create_process(_binary_shell_bin_start, (size_t) _binary_shell_bin_size);
 

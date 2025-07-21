@@ -16,7 +16,7 @@ Page *free_lists[MAX_ORDER + 1];
 static uint64_t heap_start = (uint64_t) __free_ram;
 static uint64_t heap_end = (uint64_t) __free_ram_end;
 
-static int order_for_pages(size_t pages) {
+int order_for_pages(size_t pages) {
     int order = 0;
     size_t size = 1;
     while (size < pages && order <= MAX_ORDER) {

@@ -21,6 +21,18 @@ char* strcpy(char *dst, const char *src) {
     return dst;
 }
 
+char* strncpy(char *dst, const char *src, size_t n) {
+    char *p = dst;
+    for (size_t i = 0; i < n; i++) {
+        *p = *src;
+        if (*src == '\0') return dst;
+        p++;
+        src++;
+    }
+
+    return dst;
+}
+
 uint32_t strcmp(char *a, char *b) {
     for (int i = 0; ; i++) {
         if (a[i] == '\0' && b[i] == '\0')
