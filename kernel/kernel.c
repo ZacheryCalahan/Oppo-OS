@@ -22,7 +22,8 @@ void kmain(void) {
 	virtio_blk_init();
 	init_fat32();
 
-	struct FILE *lorem = open_file("TEST/LOREM.TXT");
+	char* path = "TEST/LOREM.TXT";
+	struct FILE *lorem = open_file(path);
 	
 	if (lorem == NULL) {
 		PANIC("File struct is null?");
@@ -30,6 +31,8 @@ void kmain(void) {
 
 	// Print the found file
 	printf("Printing file below: {\n\n%s\n}\n\n", lorem->data);
+	close_file(lorem);
+	// Now update and check the file!
 
 	// Allow the scheduler to take control, and move to userspace!
 	create_process(_binary_shell_bin_start, (size_t) _binary_shell_bin_size);

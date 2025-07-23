@@ -82,6 +82,16 @@ struct dir_entry {
     uint32_t file_size;
 } __attribute__((packed));
 
+#define FAT_END_OF_CLUSTER_CHAIN 0xFFFFFFFF
+
+enum FILE_ERR {
+    SUCCESS = 0,
+    FILE_NOT_FOUND = -1,        // File not found
+    UNSUPPORTED_FEATURE = -2,   // Feature not supported (yet!)
+    FILE_NOT_DIRECTORY = -3,    // Found a file, but expected a dir.
+    PATH_INVALID = -4,          // Path supplied was not a valid path.
+};
+
 struct fsinfo {
     uint32_t lead_signature; // 0x41615252
     uint8_t reserved1[480];
@@ -95,8 +105,6 @@ struct fsinfo {
 static inline int is_eoc(uint32_t fat_data) {
     return fat_data >= 0x0FFFFFF8;
 }
-
-
 
 void init_fat32(void);
 /**

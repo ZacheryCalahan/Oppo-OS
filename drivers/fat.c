@@ -7,12 +7,13 @@
 // Needed data for FAT parsing
 uint64_t fat_begin_lba;             // First sector of the FAT
 uint64_t cluster_begin_lba;         // First sector of the data region
-uint64_t sectors_per_cluster;   
+uint64_t sectors_per_cluster;
+uint64_t bytes_per_cluster;
 uint64_t root_dir_first_cluster;    // First cluster number of the root directory
 uint64_t cluster_entries;           // Number of dir_entry in a single cluster
 uint32_t *FAT;
 uint32_t fat_entries;               // Size of the FAT in entries (for array access.)
-uint32_t pages_per_cluster;         // Pages needed for a single clusterw
+uint32_t pages_per_cluster;         // Pages needed for a single cluster
 
 uint64_t read_bpb_u64(uint8_t *bpb, size_t offset) {
     return ((uint64_t)bpb[offset]) |
@@ -39,6 +40,108 @@ uint16_t read_bpb_u16(uint8_t *bpb, size_t offset) {
 
 uint8_t read_bpb_u8(uint8_t *bpb, size_t offset) {
     return (uint8_t) bpb[offset]; // Yeah yeah this is for readability, the overhead is small enough for this os.
+}
+
+uint32_t convert_bytes_to_clusters(uint64_t bytes) {
+    return (bytes + (sectors_per_cluster * SECTOR_SIZE) - 1) / (sectors_per_cluster * SECTOR_SIZE);
+}
+
+void path_to_directory_tokens(const char* path, char tokens[64][12], uint32_t *argc) {
+    uint32_t path_len = strlen(path);
+	*argc = 0; // Args counter (number of tokens)
+	memset(tokens, 0, 64 * 12); // Clear the tokens string array
+
+	char current_token[12];
+	int current_token_index = 0;
+	memset(current_token, 0, 12); // Ensure string is empty.
+
+	for (int i = 0; i < path_len; i++) {
+		char current_char = path[i];
+
+		if (current_char == '/') { // Directory, end of token.
+			strcpy(tokens[*argc], current_token); // Write the current token
+			current_token_index = 0;
+			(*argc)++;
+			memset(current_token, 0, 12); // Clear the current token.
+			continue;
+		} else if (i == path_len - 1) { // End of the path, submit and finish
+			current_token[current_token_index] = current_char;
+			strcpy(tokens[*argc], current_token);
+			(*argc)++;
+			return;
+		}
+
+		current_token[current_token_index] = current_char; // Just write the char, nothing fancy.
+		current_token_index++;
+	}
+}
+
+uint32_t write_to_cluster(void* data, uint32_t cluster) {
+    uint32_t cluster_lba = cluster_begin_lba + (cluster - 2) * sectors_per_cluster;
+
+    // Read in the sectors to the buffer
+    for (uint32_t i = 0; i < sectors_per_cluster; i++) {
+        uint8_t *sector_ptr = (uint8_t *)data + i * SECTOR_SIZE;
+        read_write_disk(sector_ptr, cluster_lba + i, 1);
+    }
+}
+
+uint32_t find_free_cluster() {
+    for (int i = 2; i < fat_entries; i++) {
+        if (FAT[i] == 0) {
+            return i;
+        }
+    }
+
+    return 0;
+}
+
+uint32_t update_fat_chain(uint64_t size_bytes, uint32_t start_cluster_id) {
+    uint32_t clusters_needed = convert_bytes_to_clusters(size_bytes);
+    uint32_t current_cluster_id;
+    uint32_t prev_cluster_id = 0;
+    uint32_t clusters_used = 0;
+    
+
+    // Count currently used clusters
+    while (!is_eoc(FAT[current_cluster_id]) && clusters_used < clusters_needed) {
+        clusters_used++;
+        prev_cluster_id = current_cluster_id;
+        current_cluster_id = FAT[current_cluster_id]; // Get next cluster
+    }
+
+    // Update the chain
+    if (clusters_used == clusters_needed) {
+        // Shrink the chain
+        if (!is_eoc(FAT[current_cluster_id])) {
+            uint32_t to_free = current_cluster_id;
+            FAT[prev_cluster_id] = FAT_END_OF_CLUSTER_CHAIN;
+            // Free remaining clusters
+            while (!is_eoc(FAT[to_free])) {
+                uint32_t next = FAT[to_free];
+                FAT[to_free] = 0;
+                to_free = next;
+            }
+        }
+    } else {
+        // Grow the chain
+        uint32_t last = prev_cluster_id;
+        while (clusters_used < clusters_needed) {
+            // Find a free cluster
+            uint32_t new_cluster = find_free_cluster();
+            if (new_cluster == 0) {
+                PANIC("Out of clusters!");
+            }
+
+            FAT[last] = new_cluster;
+            last = new_cluster;
+            clusters_used++;
+        }
+
+        FAT[last] = FAT_END_OF_CLUSTER_CHAIN;
+    }
+
+    return clusters_used;
 }
 
 void *fat_get_cluster(uint32_t cluster) {
@@ -100,6 +203,7 @@ void init_fat32() {
     root_dir_first_cluster = read_bpb_u32(sector0, BPB_ROOT_CLUSTER);
     cluster_entries = (SECTOR_SIZE * sectors_per_cluster) / sizeof(struct dir_entry);
     pages_per_cluster = (sectors_per_cluster * SECTOR_SIZE) / PAGE_SIZE;
+    bytes_per_cluster = (sectors_per_cluster * SECTOR_SIZE);
 
     // printf("fat32: Start sector of the FAT: %d\n", fat_begin_lba);
     // printf("fat32: Start sector of data: %d\n", cluster_begin_lba);
@@ -157,68 +261,36 @@ void file_name_to_8_3(const char* path, char* buf) {
     return;
 }
 
-void path_to_directory_tokens(const char* path, char tokens[64][12], uint32_t *argc) {
-    uint32_t path_len = strlen(path);
-	*argc = 0; // Args counter (number of tokens)
-	memset(tokens, 0, 64 * 12); // Clear the tokens string array
-
-	char current_token[12];
-	int current_token_index = 0;
-	memset(current_token, 0, 12); // Ensure string is empty.
-
-	for (int i = 0; i < path_len; i++) {
-		char current_char = path[i];
-
-		if (current_char == '/') { // Directory, end of token.
-			strcpy(tokens[*argc], current_token); // Write the current token
-			current_token_index = 0;
-			(*argc)++;
-			memset(current_token, 0, 12); // Clear the current token.
-			continue;
-		} else if (i == path_len - 1) { // End of the path, submit and finish
-			current_token[current_token_index] = current_char;
-			strcpy(tokens[*argc], current_token);
-			(*argc)++;
-			return;
-		}
-
-		current_token[current_token_index] = current_char; // Just write the char, nothing fancy.
-		current_token_index++;
-	}
-}
-
 void *fat32_get_file_by_path(const char* path, uint32_t *file_size) {
-
     // Start at root cluster
     uint32_t cluster_id = root_dir_first_cluster;
     void* cluster = fat_get_cluster(cluster_id);
     struct dir_entry *entries = (struct dir_entry *) cluster;
-    int pathDelimIdx = 0;
 
+    // Get path info
     char file_names[64][12];
     uint32_t argc;
     path_to_directory_tokens(path, file_names, &argc);
     
-    for (int dir_level = 0; dir_level < argc; dir_level++) {
+    // Traverse the directories until we find the file in the path
+    int dir_level = 0; // How many directories we've entered
+    int dir_found = 0; // If we find a dir, skip searching for next cluster in the chain.
+    while (dir_level < argc) {
         // Get the current item of the path to search for
-
-        char* path_split = file_names[dir_level];
         char file_name[12];
         memset(file_name, 0, 12);
+        file_name_to_8_3(file_names[dir_level], file_name);
 
-        file_name_to_8_3(path_split, file_name);
-
-        // Read through cluster data
-        for (int i = 0; i < cluster_entries; i++) {
+        // Read through entries in the cluster
+        for (int entry_number = 0; entry_number < cluster_entries; entry_number++) {
             // Get the entry
-            struct dir_entry entry = entries[i];        
+            struct dir_entry entry = entries[entry_number];        
             
             if (entry.name[0] == 0x00) {
                 // printf("No more entries.\n");
                 file_size = 0;
                 return NULL;
             }
-
             if (entry.name[0] == 0xE5) {
                 // printf("Deleted entry.\n");
                 continue; // Deleted entry
@@ -229,17 +301,29 @@ void *fat32_get_file_by_path(const char* path, uint32_t *file_size) {
             memset(entry_name, 0, 12);
             memcpy(entry_name, entry.name, 11); // Copy entry to null terminated string.
                 
-            // Compare!
+            // Found the dir/file, now handle entering subdir or return file.
             if (strcmp(file_name, entry_name) == 0) {
-                // We found the current path item!
-                if (entry.attr & FILE_ATTR_SUB_DIR != 0) { // This is a subdir, continue down rabbit hole with next cluster
-                    // printf("Dir found!\n");
+                // printf("Entry attr: 0x%x\n", entry.attr);
+                if ((entry.attr & FILE_ATTR_LFN_ENTRY) != 0) {
+                    PANIC("LFN Entries are not currently supported.");
+                }
+
+                if ((entry.attr & FILE_ATTR_SUB_DIR) != 0) { // This is a subdir, continue down rabbit hole with next cluster
+                    printf("Dir found!\n");
                     cluster_id = entry.first_cluster_low | (entry.first_cluster_high << 16);
                     kfree_order(cluster, order_for_pages(pages_per_cluster)); // Don't leak memory ya fool!
                     cluster = fat_get_cluster(cluster_id);
+                    dir_level++;
+                    dir_found = 1; // Note to not jump to next cluster in the chain
                     break;
-                } else { // It's a file, assume we've reached the end!
-                    // printf("Returning the file...\n");
+                } else { // It's a file!
+                    printf("dir: %d, argc: %d\n", dir_level, argc);
+                    if (dir_level != (argc - 1)) { // Ensure we're at the end of the path, don't return files in the middle of the path.
+                        *file_size = 0;
+                        return NULL;
+                    }
+
+                    // Get the size of the file data
                     *file_size = entry.file_size;
                     uint32_t file_cluster = entry.first_cluster_low | (entry.first_cluster_high << 16);
                     
@@ -271,21 +355,109 @@ void *fat32_get_file_by_path(const char* path, uint32_t *file_size) {
             }
         }
 
-        // Traverse to the next cluster if file/dir not found in this cluster
-        if (is_eoc(FAT[cluster_id])) {
-            // No next cluster, so file does not exist!
-            *file_size = 0;
-            return NULL;
-        }
+        if (!dir_found) {
+            // Traverse to the next cluster if file/dir not found in this cluster
+            if (is_eoc(FAT[cluster_id])) {
+                // No next cluster, so file does not exist!
+                printf("End of cluster!\n");
+                *file_size = 0;
+                return NULL;
+            }
 
-        uint32_t new_cluster_id = FAT[cluster_id];
-        cluster_id = new_cluster_id;
-        cluster = (uint32_t *) fat_get_cluster(cluster_id);
+            cluster_id = FAT[cluster_id];
+            cluster = (uint32_t *) fat_get_cluster(cluster_id);
+        }
+        dir_found = 0; // Reset, since we've either entered a new dir, or it was already 0.
     }    
 }
 
-void *fat32_write_file_by_path(const char* path, void* file_data, uint64_t file_size) {
+enum FILE_ERR fat32_write_file_by_path(const char* path, void* file_data, uint64_t file_size, uint8_t flags) {
+    // Start at root cluster
+    uint32_t cluster_id = root_dir_first_cluster;
+    void* cluster = fat_get_cluster(cluster_id);
+    struct dir_entry *entries = (struct dir_entry *) cluster;
+    struct dir_entry last_deleted_entry;
+
+    // Get path info
+    char file_names[64][12];
+    uint32_t argc;
+    path_to_directory_tokens(path, file_names, &argc);
     
+    // Traverse the directories until we find the file in the path
+    int dir_level = 0; // How many directories we've entered
+    int dir_found = 0; // If we find a dir, skip searching for next cluster in the chain.
+    while (dir_level < argc) {
+        // Get the current item of the path to search for
+        char file_name[12];
+        memset(file_name, 0, 12);
+        file_name_to_8_3(file_names[dir_level], file_name);
+
+        // Read through entries in the cluster
+        for (int entry_number = 0; entry_number < cluster_entries; entry_number++) {
+            // Get the entry
+            struct dir_entry entry = entries[entry_number];        
+            
+            if (entry.name[0] == 0x00) {
+                // printf("No more entries.\n");
+                file_size = 0;
+                return NULL;
+            }
+            if (entry.name[0] == 0xE5) {
+                last_deleted_entry = entry; // We may use this for writing later!
+                continue; // Deleted entry
+            }
+
+            // Read name
+            char entry_name[12];
+            memset(entry_name, 0, 12);
+            memcpy(entry_name, entry.name, 11); // Copy entry to null terminated string.
+                
+            // Found the dir/file, now handle entering subdir or return file.
+            if (strcmp(file_name, entry_name) == 0) {
+                // printf("Entry attr: 0x%x\n", entry.attr);
+                if ((entry.attr & FILE_ATTR_LFN_ENTRY) != 0) {
+                    PANIC("LFN Entries are not currently supported.");
+                }
+
+                if ((entry.attr & FILE_ATTR_SUB_DIR) != 0) { // This is a subdir, continue down rabbit hole with next cluster
+                    printf("Dir found!\n");
+                    cluster_id = entry.first_cluster_low | (entry.first_cluster_high << 16);
+                    kfree_order(cluster, order_for_pages(pages_per_cluster)); // Don't leak memory ya fool!
+                    cluster = fat_get_cluster(cluster_id);
+                    dir_level++;
+                    dir_found = 1; // Note to not jump to next cluster in the chain
+                    break;
+                } else { // It's a file!
+                    printf("dir: %d, argc: %d\n", dir_level, argc);
+                    if (dir_level != (argc - 1)) { // Ensure we're at the end of the path, don't return files in the middle of the path.
+                        return NULL;
+                    }
+
+                    // At end of the path, with a matching existing file. Shrink/extend FAT cluster entries, then overwrite file.
+                    PANIC("NOT IMPLEMENTED FILE OVERWRITE");
+                }
+            }
+        }
+
+        if (!dir_found) {
+            // Traverse to the next cluster if file/dir not found in this cluster
+            if (is_eoc(FAT[cluster_id])) {
+                // No next cluster, so file does not exist!
+                if ((argc - 1) != dir_level) {
+                    return FILE_NOT_FOUND;
+                }
+                
+                // File doesn't exist, and at the end of path in the correct directory. Make FAT cluster entries, then write file.
+                PANIC("NOT IMPLEMENTED NEW FILE WRITING");
+            }
+
+            cluster_id = FAT[cluster_id];
+            cluster = (uint32_t *) fat_get_cluster(cluster_id);
+        }
+        dir_found = 0; // Since we've either entered a new dir, or it was already 0.
+    }    
 }
+
+
 
 
