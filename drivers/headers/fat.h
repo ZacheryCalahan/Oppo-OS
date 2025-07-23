@@ -68,18 +68,18 @@ struct mbr {
 #define DIR_ATTR_EOD        0x00
 
 struct dir_entry {
-    char name[11];
-    uint8_t attr;
-    uint8_t nt_reserved;
-    uint8_t creation_time_tenths;
-    uint16_t creation_time;
-    uint16_t creation_data;
-    uint16_t last_access_date;
-    uint16_t first_cluster_high;
-    uint16_t write_time;
-    uint16_t write_date;
-    uint16_t first_cluster_low;
-    uint32_t file_size;
+    char name[11];                // 8.3 filename (not null-terminated, padded with spaces)
+    uint8_t attr;                 // File attribute byte
+    uint8_t nt_reserved;          // Reserved for Windows NT (case info)
+    uint8_t creation_time_tenths; // Creation time in tenths of a second
+    uint16_t creation_time;       // Creation time
+    uint16_t creation_date;       // Creation date
+    uint16_t last_access_date;    // Last access date
+    uint16_t first_cluster_high;  // High word of first cluster number
+    uint16_t write_time;          // Last write time
+    uint16_t write_date;          // Last write date
+    uint16_t first_cluster_low;   // Low word of first cluster number
+    uint32_t file_size;           // File size in bytes
 } __attribute__((packed));
 
 #define FAT_END_OF_CLUSTER_CHAIN 0xFFFFFFFF
@@ -90,6 +90,9 @@ enum FILE_ERR {
     UNSUPPORTED_FEATURE = -2,   // Feature not supported (yet!)
     FILE_NOT_DIRECTORY = -3,    // Found a file, but expected a dir.
     PATH_INVALID = -4,          // Path supplied was not a valid path.
+    UNKNOWN_ERR = -5,
+    DIR_FULL = -6,
+    NO_SPACE = -7,
 };
 
 struct fsinfo {
@@ -116,5 +119,5 @@ void init_fat32(void);
 * @return Pointer to the file if found, returns NULL on file not found.
 */
 void *fat32_get_file_by_path(const char* path, uint32_t *file_size);
-
+enum FILE_ERR fat32_write_file_by_path(const char* path, void* file_data, uint64_t file_size, uint8_t flags);
 #endif

@@ -22,17 +22,18 @@ void kmain(void) {
 	virtio_blk_init();
 	init_fat32();
 
-	char* path = "TEST/LOREM.TXT";
-	struct FILE *lorem = open_file(path);
-	
-	if (lorem == NULL) {
-		PANIC("File struct is null?");
-	}
+	// Create new FILE (or edit if you've already made it!)
+	char *path = "TEST/NEWFILE.TXT";
+	char *new_text = "EDITED NEW FILE! WOO!";
+	uint64_t new_file_size = strlen(new_text);
 
-	// Print the found file
-	printf("Printing file below: {\n\n%s\n}\n\n", lorem->data);
-	close_file(lorem);
-	// Now update and check the file!
+	fat32_write_file_by_path(path, new_text, new_file_size, 0);
+	struct FILE *new_file = open_file(path);
+	if (new_file == NULL) {
+		PANIC("Error after file write.");
+	}
+	printf("Printing new file below: {\n\n%s\n}\n\n", new_file->data);
+	close_file(new_file);
 
 	// Allow the scheduler to take control, and move to userspace!
 	create_process(_binary_shell_bin_start, (size_t) _binary_shell_bin_size);
