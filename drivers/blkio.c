@@ -1,3 +1,7 @@
+/*
+    NOTE: This assumes only one blk_io device at a time!
+*/
+
 #include "headers/blkio.h"
 #include "headers/virtio.h"
 #include "../klib/headers/stdio.h"

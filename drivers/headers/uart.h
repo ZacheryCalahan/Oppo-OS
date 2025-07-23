@@ -16,7 +16,6 @@
 /*  The line Control Register is used to specify the asynchronous data communication format. The number of the word length,
     stop bits, and parity can be selected by writing apporpriate bits in this register.
 */
-
 #define LINE_CONTROL_REGISTER 0x3
 #define LINE_CONTROL_REGISTER_BAUD_LATCH (0x1 << 7)
 

@@ -5,8 +5,6 @@
 
 #include <stdint.h>
 
-#define SCAUSE_ECALL 8
-
 // 64bit only!
 __attribute__((naked))
 __attribute__((aligned(8)))

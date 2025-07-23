@@ -1,3 +1,8 @@
+/*
+    Contains the abstraction layer between the underlying file system, and the user facing files/directories. 
+    Changes here WILL break older programs. Extend, not rewrite, if possible.
+*/
+
 #ifndef FS_H
 #define FS_H
 

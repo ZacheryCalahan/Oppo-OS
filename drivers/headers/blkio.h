@@ -5,9 +5,8 @@
 
 #define SECTOR_SIZE         512
 #define VIRTIO_DEVICE_BLK   2
-#define VIRTIO_BLK_T_IN  0
-#define VIRTIO_BLK_T_OUT 1
-
+#define VIRTIO_BLK_T_IN     0
+#define VIRTIO_BLK_T_OUT    1
 
 struct virtio_blk_req {
     uint32_t type;

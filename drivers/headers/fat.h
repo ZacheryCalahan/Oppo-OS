@@ -90,12 +90,12 @@ enum FILE_ERR {
     UNSUPPORTED_FEATURE = -2,   // Feature not supported (yet!)
     FILE_NOT_DIRECTORY = -3,    // Found a file, but expected a dir.
     PATH_INVALID = -4,          // Path supplied was not a valid path.
-    UNKNOWN_ERR = -5,
-    DIR_FULL = -6,
-    NO_SPACE = -7,
+    UNKNOWN_ERR = -5,           // Unknown error occured, or SOMEONE is too lazy to determine why.
+    DIR_FULL = -6,              // Directory is full! (Which means I should allocate another cluster for the dir, but when will I actually use them all)
+    NO_SPACE = -7,              // No space to write the file in either a cluster, or the FAT.
 };
 
-struct fsinfo {
+struct fsinfo { // Unused, but here when we do!
     uint32_t lead_signature; // 0x41615252
     uint8_t reserved1[480];
     uint32_t struct_signature; // 0x61417272
@@ -119,5 +119,16 @@ void init_fat32(void);
 * @return Pointer to the file if found, returns NULL on file not found.
 */
 void *fat32_get_file_by_path(const char* path, uint32_t *file_size);
+
+/**
+* Write to a file by its absolute path. Will create a new file, or overwrite the existing file.
+*
+* @param path The absolute path of the file.
+* @param file_data Pointer to the contents of the file
+* @param file_size A buffer to hold the size of the returned file. Returns 0 on file not found.
+* @param flags The attributes of the file to write
+*
+* @return `struct FILE_ERR` containing the return status of the file write. Must be read by the file handler.
+*/
 enum FILE_ERR fat32_write_file_by_path(const char* path, void* file_data, uint64_t file_size, uint8_t flags);
 #endif

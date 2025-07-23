@@ -1,12 +1,12 @@
 #include "headers/kernel.h"
+#include "headers/proc.h"
+#include "headers/fs.h"
 #include "../klib/headers/string.h"
 #include "../klib/headers/stdlib.h"
 #include "../arch/headers/trap.h"
-#include "headers/proc.h"
 #include "../arch/headers/paging.h"
 #include "../drivers/headers/blkio.h"
 #include "../drivers/headers/fat.h"
-#include "headers/fs.h"
 
 #include <stdint.h>
 
