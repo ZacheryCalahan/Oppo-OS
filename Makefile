@@ -30,6 +30,16 @@ generate_new_fat32:
 	qemu-img create -f raw disk.img 128M
 	mkfs.fat -F 32 disk.img
 
+# Make a backup of the filesystem
+backup_file_system:
+	cp disk.img misc/disk.img
+	echo "Backup created in misc/disk.img"
+
+# Restore backup
+restore_backup:
+	rm disk.img
+	cp misc/disk.img disk.img
+
 debug: kernel.elf
 	@qemu-system-riscv64 $(QEMUOPTS) -kernel kernel.elf -s -S &
 	$(GDB) kernel.elf 
