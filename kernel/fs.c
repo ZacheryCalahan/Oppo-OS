@@ -25,7 +25,15 @@ struct FILE *open_file(const char* path) {
     return new_file;
 }
 
+void write_file(const char* path, struct FILE *file) {
+    // This is VERY primitive and assumes that the caller has updated the file data (contigious memory!)
+    // the file size, and did not mess with the type of file (can't change file name!). 
+    fat32_write_file_by_path(path, file->data, file->size, 0);
+}
+
 void close_file(struct FILE *file) {
+    file->in_use = 0;
+    file->size = 0;
     kfree_order(file, order_for_pages(get_pages_from_bytes((uint64_t) file->size)));
 }
 
