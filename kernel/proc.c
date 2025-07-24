@@ -6,7 +6,8 @@
 #include "../drivers/headers/virtio.h"
 #include <stddef.h>
 
-#define PROCS_MAX 8
+#define PROCS_MAX 8 // Max processes that can be registered to the scheduler at a given time
+
 #define PROC_UNUSED 0
 #define PROC_RUNNABLE 1
 #define PROC_EXITED 2
@@ -16,8 +17,7 @@ struct process *idle_proc; // Process of the kernel, denoted by id 0.
 struct process procs[PROCS_MAX];
 
 extern char __kernel_base[];
-#define USER_BASE 0x1000000
-
+#define USER_BASE 0x1000000 // Arbitrary start address of all userspace programs.
 
 __attribute__((naked))
 void switch_context(uint64_t *prev_sp, uint64_t *next_sp) {

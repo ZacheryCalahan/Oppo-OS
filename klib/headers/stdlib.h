@@ -5,7 +5,15 @@
 #include <stddef.h>
 
 #define PAGE_SIZE 4096 // This should never change, it's the intended page size for sv39!
-extern char __free_ram[], __free_ram_end[];
+extern char __free_ram[], __free_ram_end[]; // Represents the full range of kernel ram for use.
+
+/**
+ * Converts a number of pages to a corresponding `order` for the buddy allocator.
+ * 
+ * @param pages Number of pages
+ * @return The `order` for the pages
+ */
+int order_for_pages(size_t pages);
 
 /**
  * Initialize the kernel memory management system.
@@ -68,6 +76,14 @@ void* memset(void *dest, int value, size_t n);
  */
 void* memcpy(void* dest, const void* src, size_t len);
 
+/**
+ * Frees allocated memory with size in bytes
+ * 
+ * @param ptr Pointer to allocated memory
+ * @param bytes The size of the allocated memory in bytes
+ */
+void kfree_size(void *ptr, uint64_t bytes);
+
 static inline int is_aligned(uint64_t value, uint64_t align) {
     if (align == 0)
         align = sizeof(void*);
@@ -77,9 +93,9 @@ static inline int is_aligned(uint64_t value, uint64_t align) {
 static inline uint64_t align_up(uint64_t value, uint64_t align) {
     return (value + align - 1) & ~(align - 1);
 }
-int order_for_pages(size_t pages);
 
 static inline uint32_t get_pages_from_bytes(uint64_t bytes) {
     return (bytes + PAGE_SIZE - 1) / PAGE_SIZE;
 }
+
 #endif

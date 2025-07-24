@@ -134,6 +134,11 @@ void kfree_order(void *ptr, size_t order) {
     free_lists[order] = block;
 }
 
+void kfree_size(void *ptr, uint64_t bytes) {
+    int order = order_for_pages((bytes + PAGE_SIZE - 1) / PAGE_SIZE);
+    kfree_order(ptr, order);
+}
+
 void* memset(void *dest, int value, size_t n) {
     unsigned char *ptr = dest;
     unsigned char byte = (unsigned char) value;
