@@ -7,6 +7,7 @@
 #include "../arch/headers/paging.h"
 #include "../drivers/headers/blkio.h"
 #include "../drivers/headers/fat.h"
+#include "../drivers/headers/virtio_gpu.h"
 
 #include <stdint.h>
 
@@ -21,6 +22,7 @@ void kmain(void) {
 
 	virtio_blk_init();
 	init_fat32();
+	virtio_gpu_init();
 
 	// Allow the scheduler to take control, and move to userspace!
 	create_process(_binary_shell_bin_start, (size_t) _binary_shell_bin_size);

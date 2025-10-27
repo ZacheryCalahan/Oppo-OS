@@ -47,7 +47,7 @@
 			riscv,cboz-block-size = <0x40>;
 			riscv,cbom-block-size = <0x40>;
 			riscv,isa = "rv64imafdch_zicbom_zicboz_zicntr_zicsr_zifencei_zihintntl_zihintpause_zihpm_zawrs_zfa_zca_zcd_zba_zbb_zbc_zbs_sstc_svadu";
-			mmu-type = "riscv,sv39";
+			mmu-type = "riscv,sv57";
 
 			interrupt-controller {
 				#interrupt-cells = <0x01>;
@@ -87,7 +87,7 @@
 
 	chosen {
 		stdout-path = "/soc/serial@10000000";
-		rng-seed = <0x4478e4ab 0xb48dad06 0x59e66dfa 0x88e926a5 0xe43432ec 0xf0046f1f 0x130bd5cc 0x9fe76cb0>;
+		rng-seed = <0x4957f47 0x2546430a 0x193f9e95 0x8530e480 0x9779800d 0x5d794e9d 0xcd0faede 0xcc7d82ec>;
 	};
 
 	soc {

@@ -13,33 +13,35 @@ struct virtio_blk_req *blk_req;
 uint32_t blk_req_paddr; // May also be wrong because riscv32/riscv64
 uint64_t blk_capacity;
 
+#define port 0
+
 void virtio_blk_init(void) {
-    if (virtio_reg_read32(VIRTR_MAGIC_O) != VIRTIO_MAGIC_NUMBER) {
+    if (virtio_reg_read32(port, VIRTR_MAGIC_O) != VIRTIO_MAGIC_NUMBER) {
         PANIC("virtio: invalid magic value!");
     }
-    if (virtio_reg_read32(VIRTR_VERSION_O) != 1) {
+    if (virtio_reg_read32(port, VIRTR_VERSION_O) != 1) {
         PANIC("virtio: invalid version");
     }
-    if (virtio_reg_read32(VIRTR_DEV_ID_O) != VIRTIO_DEVICE_BLK) {
+    if (virtio_reg_read32(port, VIRTR_DEV_ID_O) != VIRTIO_DEVICE_BLK) {
         PANIC("virtio: invalid device id");
     }
 
     // Reset device
-    virtio_reg_write32(VIRTR_DEV_STATUS_O, 0);
+    virtio_reg_write32(port, VIRTR_DEV_STATUS_O, 0);
     // Set ACK status bit
-    virtio_reg_fetch_and_or32(VIRTR_DEV_STATUS_O, VIRTIO_STATUS_ACKNOWLEDGE);
+    virtio_reg_fetch_and_or32(port, VIRTR_DEV_STATUS_O, VIRTIO_STATUS_ACKNOWLEDGE);
     // Set DRIVER status bit
-    virtio_reg_fetch_and_or32(VIRTR_DEV_STATUS_O, VIRTIO_STATUS_DRIVER);
+    virtio_reg_fetch_and_or32(port, VIRTR_DEV_STATUS_O, VIRTIO_STATUS_DRIVER);
     // Set FEATURES bit
-    virtio_reg_fetch_and_or32(VIRTR_DEV_STATUS_O, VIRTIO_STATUS_FEATURES_OK);
+    virtio_reg_fetch_and_or32(port, VIRTR_DEV_STATUS_O, VIRTIO_STATUS_FEATURES_OK);
     
     // BLK device setup!
-    blk_request_vq = virtq_init(0);
+    blk_request_vq = virtq_init(port, 0);
     // Set the DRIVER_OK status bit
-    virtio_reg_write32(VIRTR_DEV_STATUS_O, VIRTIO_STATUS_DRIVER_OK);
+    virtio_reg_write32(port, VIRTR_DEV_STATUS_O, VIRTIO_STATUS_DRIVER_OK);
 
     // Get disk capacity
-    blk_capacity = virtio_reg_read64(VIRTR_CFG_O + 0) * SECTOR_SIZE;
+    blk_capacity = virtio_reg_read64(port, VIRTR_CFG_O + 0) * SECTOR_SIZE;
     printf("virtio-blk: capacity is %d bytes\n", blk_capacity);
 
     // Allocate a region to store requests to the device.
@@ -80,9 +82,9 @@ void read_write_disk(void *buf, unsigned sector, int is_write) {
     vq->buffers[2].flags = VIRTQ_DESC_F_WRITE;
 
     // Notify device of request
-    virtq_kick(vq, 0);
+    virtq_kick(port, vq, 0);
 
-    // Wait unitl the device finishes processing.
+    // Wait until the device finishes processing.
     while (virtq_is_busy(vq)) {}
 
     if (blk_req->status != 0) {

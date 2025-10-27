@@ -12,7 +12,7 @@ CFLAGS = -Wall -Wextra -mcmodel=medany -ffreestanding -g
 LFLAGS = -T linker.ld -nostdlib -o kernel.elf
 
 QEMUOPTS =  -machine virt -bios default -m 1G # 1 Gibibytes of RAM
-QEMUOPTS += -device virtio-gpu-pci -device virtio-blk-device,drive=drive0,bus=virtio-mmio-bus.0
+QEMUOPTS += -device virtio-gpu-device,bus=virtio-mmio-bus.1 -device virtio-blk-device,drive=drive0,bus=virtio-mmio-bus.0
 QEMUOPTS += -drive id=drive0,file=disk.img,if=none,format=raw # use fat_filesystem as a disk
 QEMUOPTS += -monitor mon:stdio
 #QEMUOPTS += -d unimp,guest_errors,int,cpu_reset -D qemu.log # Specific to debugging traps, comment when not in use. (MAKES LARGE FILES!)

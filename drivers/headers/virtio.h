@@ -124,16 +124,16 @@ struct virt_queue {
     uint16_t last_used_index;
 } __attribute__((packed));
 
-struct virt_queue *virtq_init(unsigned index);
-uint32_t virtio_reg_read32(unsigned offset);
-uint64_t virtio_reg_read64(unsigned offset);
-void virtio_reg_write32(unsigned offset, uint32_t value);
-void virtio_reg_fetch_and_or32(unsigned offset, uint32_t value);
+struct virt_queue *virtq_init(unsigned port, unsigned index);
+uint32_t virtio_reg_read32(unsigned port, unsigned offset);
+uint64_t virtio_reg_read64(unsigned port, unsigned offset);
+void virtio_reg_write32(unsigned port, unsigned offset, uint32_t value);
+void virtio_reg_fetch_and_or32(unsigned port, unsigned offset, uint32_t value);
 /*
     Notify the device that there is a new request, where `desc_index` is the index
     of the head descriptor of the new request.
 */
-void virtq_kick(struct virt_queue *vq, int desc_index);
+void virtq_kick(unsigned port, struct virt_queue *vq, int desc_index);
 /*
     Check if there are requests being processed by the device
 */
