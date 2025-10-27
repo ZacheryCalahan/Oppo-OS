@@ -18,8 +18,6 @@ void virtio_reg_fetch_and_or32(unsigned port, unsigned offset, uint32_t value) {
     virtio_reg_write32(port, offset, virtio_reg_read32(port, offset) | value);
 }
 
-
-
 struct virt_queue *virtq_init(unsigned port, unsigned index) {
     // Allocate a region for the virtqueue
     uint64_t virtq_paddr = (uint64_t) kalloc(align_up(sizeof(struct virt_queue), PAGE_SIZE) / PAGE_SIZE);

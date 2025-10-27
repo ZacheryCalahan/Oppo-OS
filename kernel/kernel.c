@@ -24,6 +24,7 @@ void kmain(void) {
 	init_fat32();
 	virtio_gpu_init();
 
+
 	// Allow the scheduler to take control, and move to userspace!
 	create_process(_binary_shell_bin_start, (size_t) _binary_shell_bin_size);
 	yield();

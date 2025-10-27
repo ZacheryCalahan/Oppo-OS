@@ -2,6 +2,7 @@
 #define VIRTIO_GPU
 
 #include <stdint.h>
+#include <stdbool.h>
 
 #define VIRTIO_DEVICE_GPU 16
 #define VIRTIO_GPU_MAX_SCANOUTS 16
@@ -143,7 +144,21 @@ struct virtio_gpu_resource_flush {
     uint32_t padding;
 }__attribute__((packed));
 
-
 void *virtio_gpu_init(void);
+
+/*
+ * Flushes the current framebuffer to the GPU
+ */
+void flush();
+
+/*
+ * Draws a rectangle to the framebuffer, if size is 0 the rect is filled with the color.
+ */
+void draw_rect(struct gpu_pixel_rgba *fb, uint32_t x, uint32_t y, uint32_t w, uint32_t h, uint32_t size, struct gpu_pixel_rgba color);
+
+/*
+ * Sets the screen to white.
+ */
+void clear_screen();
 
 #endif

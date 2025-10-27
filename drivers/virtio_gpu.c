@@ -14,6 +14,51 @@ uint32_t gpu_req_paddr;
 
 struct gpu_pixel_rgba *framebuffer;
 
+void bounce() {
+    // Bounce animation
+	struct gpu_pixel_rgba black = {
+			.a = 255,
+			.r = 0,
+			.g = 0,
+			.b = 0
+	};
+
+	int x = 0, y = 0; // Position
+	int is_left = 0, is_down = 1; // State
+	int w = 64, h = 64; // Size
+
+	while (1) {
+		clear_screen();
+
+		if (is_left) {
+			x -= 1;
+		} else {
+			x += 1;
+		}
+
+		if (is_down) {
+			y += 1;
+		} else {
+			y -= 1;
+		}
+
+		if (y == 0 || y == 480 - h) {
+			is_down = !is_down;
+		}
+
+		if (x == 0 || x == 640 - w) {
+			is_left = !is_left;
+		}
+
+		draw_rect(framebuffer, x, y, w, h, 0, black);
+        flush();
+
+		for (int i = 0; i < 200000; i++) {
+			// Delay
+		}
+	}
+}
+
 void *virtio_gpu_init(void) {
     if (virtio_reg_read32(port, VIRTR_MAGIC_O) != VIRTIO_MAGIC_NUMBER) {
         PANIC("virtio: invalid magic value!");
@@ -77,7 +122,7 @@ void *virtio_gpu_init(void) {
     while (virtq_is_busy(vq)) {}
     
     if (*resp != VIRTIO_GPU_RESP_OK_NODATA) {
-        printf("virtio_gpu: warn: invalid response: 0x%x\n", *resp);
+        printf("virtio_gpu: warn: invalid resource: 0x%x\n", *resp);
     }
 
     // Set buffer
@@ -122,7 +167,7 @@ void *virtio_gpu_init(void) {
     while (virtq_is_busy(vq)) {}
 
     if (*resp != VIRTIO_GPU_RESP_OK_NODATA) {
-        printf("virtio_gpu: warn: invalid response: 0x%x\n", *resp);
+        printf("virtio_gpu: warn: invalid backing: 0x%x\n", *resp);
     }
 
     // Link the framebuffer to a display scanout.
@@ -160,10 +205,17 @@ void *virtio_gpu_init(void) {
     while (virtq_is_busy(vq)) {}
     
     if (*resp != VIRTIO_GPU_RESP_OK_NODATA) {
-        printf("virtio_gpu: warn: invalid response: 0x%x\n", *resp);
+        printf("virtio_gpu: warn: invalid scan out: 0x%x\n", *resp);
     }
 
-    // Test with full white
+    printf("virtio_gpu: initialized.\n");
+
+    bounce();
+
+    return 0;
+}
+
+void clear_screen() {
     struct gpu_pixel_rgba white = {
         .r = 255,
         .a = 255,
@@ -174,7 +226,49 @@ void *virtio_gpu_init(void) {
     for (int i = 0; i < GPU_DEFAULT_HEIGHT * GPU_DEFAULT_WIDTH; i++) {
         framebuffer[i] = white;
     }
+}
 
+static struct gpu_pixel_rgba hex_to_rgba(uint64_t color) {
+    struct gpu_pixel_rgba rgba;
+    memcpy(&rgba, &color, 4);
+    return rgba;
+}
+
+void set_pixel(struct gpu_pixel_rgba *fb, uint32_t x, uint32_t y, struct gpu_pixel_rgba color) {
+    if (x < GPU_DEFAULT_WIDTH && y < GPU_DEFAULT_HEIGHT) {
+        framebuffer[y * GPU_DEFAULT_WIDTH + x] = color;
+    }
+}
+
+void fill_rect(struct gpu_pixel_rgba *fb, uint32_t x, uint32_t y, uint32_t w, uint32_t h, struct gpu_pixel_rgba color) {
+    for (uint32_t row = y; row < (y + h); row++) {
+        for (uint32_t col = x; col < (x + w); col++) {
+            set_pixel(fb, col, row, color);
+        }
+    }
+}
+
+void stroke_rect(struct gpu_pixel_rgba *fb, uint32_t x, uint32_t y, uint32_t w, uint32_t h, struct gpu_pixel_rgba color, uint32_t size) {
+    fill_rect(fb, x, y, w, size, color);
+    fill_rect(fb, x, y + h, w, size, color);
+    fill_rect(fb, x, y, size, h, color);
+    fill_rect(fb, x + w, y, size, h + size, color);
+}
+
+void draw_rect(struct gpu_pixel_rgba *fb, uint32_t x, uint32_t y, uint32_t w, uint32_t h, uint32_t size, struct gpu_pixel_rgba color) {
+    if (size == 0) {
+        fill_rect(fb, x, y, w, h, color);
+        return;
+    }
+
+    stroke_rect(fb, x, y, w, h, color, size);
+}
+
+void flush() {
+    uint64_t *resp; // Location of the response
+    struct virt_queue *vq = gpu_request_vq;
+
+    // Move buffer to the GPU
     struct virtio_gpu_transfer_to_host_2d transfer = {
         .hdr = {
             .type = VIRTIO_GPU_CMD_TRANSFER_TO_HOST_2D,
@@ -193,31 +287,26 @@ void *virtio_gpu_init(void) {
         .resource_id = 1,
         .padding = 0
     };
-
-    resp = (uint64_t *) &transfer + sizeof(transfer);
+    resp = (uint64_t *) &transfer;
 
     vq->buffers[0].addr = (uint64_t) &transfer;
     vq->buffers[0].len = sizeof(transfer);
     vq->buffers[0].flags = VIRTQ_DESC_F_NEXT;
     vq->buffers[0].next = 1;
-
     vq->buffers[1].addr = (uint64_t) framebuffer;
     vq->buffers[1].len = sizeof(framebuffer);
     vq->buffers[1].flags = VIRTQ_DESC_F_NEXT;
     vq->buffers[1].next = 2;
-
     vq->buffers[2].addr = (uint64_t) resp;
     vq->buffers[2].len = sizeof(uint64_t);
     vq->buffers[2].flags = VIRTQ_DESC_F_WRITE;
-
     virtq_kick(port, vq, 0);
-
     while (virtq_is_busy(vq)) {}
-    
     if (*resp != VIRTIO_GPU_RESP_OK_NODATA) {
         printf("virtio_gpu: warn: invalid response: 0x%x\n", *resp);
     }
 
+    // Flush
     struct virtio_gpu_resource_flush flush = {
         .hdr = {
             .type = VIRTIO_GPU_CMD_RESOURCE_FLUSH,
@@ -235,7 +324,6 @@ void *virtio_gpu_init(void) {
         .resource_id = 1,
         .padding = 0
     };
-
     resp = (uint64_t *) &flush + sizeof(flush);
 
     vq->buffers[0].addr = (uint64_t) &flush;
@@ -254,12 +342,7 @@ void *virtio_gpu_init(void) {
     if (*resp != VIRTIO_GPU_RESP_OK_NODATA) {
         printf("virtio_gpu: warn: invalid response: 0x%x\n", *resp);
     }
-
-    printf("virtio_gpu: initialized.\n");
-
-    return 0;
 }
-
 
 
 
