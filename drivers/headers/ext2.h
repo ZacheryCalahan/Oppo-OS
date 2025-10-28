@@ -16,8 +16,8 @@
 #define SUPPORTS_EXT_INODE_ATTR         0
 #define SUPPORTS_FS_RESIZABLE           0
 #define SUPPORTS_DIR_HASH_INDEX         0
-#define SUPPORTS_SPARSE_SB_DT           0
-#define SUPPORTS_64BIT_FILE_SIZE        0
+#define SUPPORTS_SPARSE_SB_DT           1
+#define SUPPORTS_64BIT_FILE_SIZE        1
 #define SUPPORTS_DIR_CONTENTS_BIN_TREE  0
 
 enum file_system_state {
@@ -139,13 +139,13 @@ struct inode {
 
 // Top 4 bits of inode_permissions_type
 enum inode_type {
-    FIFO         = 0x1000,
-    CHAR_DEVICE  = 0x2000,
-    DIRECTORY    = 0x4000,
-    BLOCK_DEVICE = 0x6000,
-    FILE         = 0x8000,
-    SYM_LINK     = 0xA000,
-    UNIX_SOCKET  = 0xC000,
+    INODE_TYPE_FIFO         = 0x1000,
+    INODE_TYPE_CHAR_DEVICE  = 0x2000,
+    INODE_TYPE_DIRECTORY    = 0x4000,
+    INODE_TYPE_BLOCK_DEVICE = 0x6000,
+    INODE_TYPE_FILE         = 0x8000,
+    INODE_TYPE_SYM_LINK     = 0xA000,
+    INODE_TYPE_UNIX_SOCKET  = 0xC000,
 };
 
 // Bottom 12 bits of inode_permissions_type
@@ -187,14 +187,14 @@ struct directory_entry {
 } __attribute__((packed));
 
 enum dir_entry_type_indicators {
-    UNKNOWN_TYPE = 0,
-    REGULAR_FILE,
-    DIRECTORY,
-    CHAR_DEVICE,
-    BLOCK_DEVICE,
-    FIFO,
-    SOCKET,
-    SYM_LINK,
+    INDICATOR_TYPE_UNKNOWN_TYPE = 0,
+    INDICATOR_TYPE_REGULAR_FILE,
+    INDICATOR_TYPE_DIRECTORY,
+    INDICATOR_TYPE_CHAR_DEVICE,
+    INDICATOR_TYPE_BLOCK_DEVICE,
+    INDICATOR_TYPE_FIFO,
+    INDICATOR_TYPE_SOCKET,
+    INDICATOR_TYPE_SOFT_SYM_LINK,
 };
 
 #define OPT_FEAT_PREALLOCATE_BLKS_IN_DIR    (1 << 0)
