@@ -91,6 +91,112 @@ struct s_block {
     struct extended_s_block esb;        // If major version is >= 1, extended superblock is here.
 } __attribute__((packed));
 
+struct block_group_descriptor_table {
+    uint32_t block_usage_bitmap_block_addr;
+    uint32_t inode_usage_bitmap_block_addr;
+    uint32_t inode_block_start_block_addr;
+    uint16_t unallocated_block_in_group_count;
+    uint16_t unallocated_inode_in_group_count;
+    uint16_t directories_in_group_count;
+    uint8_t padding[14];
+} __attribute__((packed));
+
+struct inode {
+    uint16_t permissions; // Contains the permissions and the type of inode
+    uint16_t user_id;
+    uint32_t low_size; // Lower 32 bits of the size of the inode
+    uint32_t last_access_time;
+    uint32_t creation_time;
+    uint32_t last_modification_time;
+    uint32_t deletion_time;
+    uint16_t group_id;
+    uint16_t count_hard_links; // Count of dir entries to the inode. When 0, the data blocks are marked as unallocated. 
+    uint32_t count_disk_sectors; // Count of disk sectors in use by the inode, no including the inode structure nor dir entries linked.
+    uint32_t flags;
+    uint32_t os_specific_value_1;
+    uint32_t direct_block_pointer_0;
+    uint32_t direct_block_pointer_1;
+    uint32_t direct_block_pointer_2;
+    uint32_t direct_block_pointer_3;
+    uint32_t direct_block_pointer_4;
+    uint32_t direct_block_pointer_5;
+    uint32_t direct_block_pointer_6;
+    uint32_t direct_block_pointer_7;
+    uint32_t direct_block_pointer_8;
+    uint32_t direct_block_pointer_9;
+    uint32_t direct_block_pointer_10;
+    uint32_t direct_block_pointer_11;
+    uint32_t single_indirect_block_pointer;
+    uint32_t double_indirect_block_pointer;
+    uint32_t triply_indirect_block_pointer;
+    uint32_t gen_number;
+    uint32_t extended_attribute_block;
+    uint32_t high_size; // Upper 32 bits of size if file, otherwise directory ACL.
+    uint32_t block_address_of_fragment;
+    uint8_t  os_specific_value_2[12];
+
+} __attribute__((packed));
+
+// Top 4 bits of inode_permissions_type
+enum inode_type {
+    FIFO         = 0x1000,
+    CHAR_DEVICE  = 0x2000,
+    DIRECTORY    = 0x4000,
+    BLOCK_DEVICE = 0x6000,
+    FILE         = 0x8000,
+    SYM_LINK     = 0xA000,
+    UNIX_SOCKET  = 0xC000,
+};
+
+// Bottom 12 bits of inode_permissions_type
+enum inode_permissions {
+    OTHER_EXE    = 0x001,
+    OTHER_WRITE  = 0x002,
+    OTHER_READ   = 0x004,
+    GROUP_EXE    = 0x008,
+    GROUP_WRITE  = 0x010,
+    GROUP_READ   = 0x020,
+    USER_EXE     = 0x040,
+    USER_WRITE   = 0x080,
+    USER_READ    = 0x100,
+    STICKY_BIT   = 0x200,
+    SET_GROUP_ID = 0x400,
+    SET_USER_ID  = 0x800,
+};
+
+enum inode_flags {
+    SECURE_DELETION             = 0x00000001, // not used
+    COPY_ON_DELETE              = 0x00000002, // not used
+    FILE_COMPRESSION            = 0x00000004, // not used
+    SYNCHRONOUS_UPDATES         = 0x00000008, // New data is immediately written to disk
+    IMMUTABE_FILE               = 0x00000010, // Content cannot be changed
+    APPEND_ONLY                 = 0x00000020, 
+    DUMP_EXCLUDE                = 0x00000040, // File not included in `dump` command 
+    LAST_ACCESS_TIME_NO_UPDATE  = 0x00000080, 
+    HASH_INDEXED_DIR            = 0x00010000, 
+    AFS_DIR                     = 0x00020000, 
+    JOURNAL_FILE_DATA           = 0x00040000, 
+};
+
+struct directory_entry {
+    uint32_t inode;
+    uint16_t total_size;
+    uint8_t  name_len_lsb_8; // Name length least-significant 8 bits
+    uint8_t  type_indicator; // if "dir entry have file type byte", then type indicator. Otherwise, most-significant 9 bits of name length.
+    char*    name;           // Name of the dir 
+} __attribute__((packed));
+
+enum dir_entry_type_indicators {
+    UNKNOWN_TYPE = 0,
+    REGULAR_FILE,
+    DIRECTORY,
+    CHAR_DEVICE,
+    BLOCK_DEVICE,
+    FIFO,
+    SOCKET,
+    SYM_LINK,
+};
+
 #define OPT_FEAT_PREALLOCATE_BLKS_IN_DIR    (1 << 0)
 #define OPT_FEAT_AFS_SERVER_INODES_EXIST    (1 << 1)
 #define OPT_FEAT_FS_HAS_JOURNAL             (1 << 2)

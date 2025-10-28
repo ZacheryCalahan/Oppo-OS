@@ -1,11 +1,11 @@
+.gitignore
+.vscode/
+
 *.o
 *.elf
-.vscode/
 *.log
 *.bin
-fat_filesystem/*
+
 *.img
 misc/*
-.mnt/
-drivers/ext2.c
-.gitignore
+

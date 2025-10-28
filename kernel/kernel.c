@@ -6,7 +6,7 @@
 #include "../arch/headers/trap.h"
 #include "../arch/headers/paging.h"
 #include "../drivers/headers/blkio.h"
-#include "../drivers/headers/fat.h"
+#include "../drivers/headers/ext2.h"
 #include "../drivers/headers/virtio_gpu.h"
 
 #include <stdint.h>
@@ -21,8 +21,9 @@ void kmain(void) {
 	init_proc();
 
 	virtio_blk_init();
-	init_fat32();
-	virtio_gpu_init();
+	init_ext2();
+	
+	//virtio_gpu_init();
 
 
 	// Allow the scheduler to take control, and move to userspace!
