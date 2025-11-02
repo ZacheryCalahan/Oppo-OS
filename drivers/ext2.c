@@ -146,6 +146,7 @@ struct inode* get_inode(char* path) {
    
     // Read through each block sequentially.
     uint32_t block_number = 0;
+    int32_t entries_to_search = current_node->count_hard_links;
     while (1) {
         // Determine where to read the entry from based on block pointer
         struct directory_entry *entry;
@@ -160,6 +161,8 @@ struct inode* get_inode(char* path) {
         } else { // Assume we're never using more than 16MiB for a single directory.
             PANIC("EXT2: Directory search exceeded 16MiB.");
         }
+        
+        printf("Entries to search for in dir: %d\n", entries_to_search);
 
         // Read through entire block of entries
         uint32_t block_idx = 0;
@@ -174,6 +177,7 @@ struct inode* get_inode(char* path) {
                 continue;
             }
 
+            // Check that this entry is valid.
             if (entry->rec_len < 8) {
                 // Corrupted entry, retrieve next block.
                 block_number++;
@@ -210,13 +214,21 @@ struct inode* get_inode(char* path) {
 
                 // Reset things in prep of next dir traversal.
                 block_number = 0 - 1; // Easier than handling logic for the break, just account for the increment later.
+                block_idx = 0;
+                entries_to_search = current_node->count_hard_links;
                 break;
             }
 
             // Not the right entry, try the next.
             uint8_t *entry_addr = (uint8_t *) entry + entry->rec_len;
             entry = (struct directory_entry *) entry_addr;
+            entries_to_search--;
             block_idx += entry->rec_len;
+
+            // Break from search if all entries are checked
+            if (entries_to_search < 0) {
+                return NULL;
+            }
 
         }
 

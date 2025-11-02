@@ -24,7 +24,13 @@ void kmain(void) {
 	// File Handling
 	virtio_blk_init();
 	init_ext2();
-	struct inode *node = get_inode("testdir/testfile.txt");
+
+
+	struct inode *node = get_inode("hello.txt");
+	if (node == NULL) {
+		PANIC("inode not found!");
+	}
+
 	char* text = read_block(node->direct_block_pointer[0]);
 	printf("\n%s\n", text);
 
