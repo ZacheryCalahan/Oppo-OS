@@ -50,6 +50,6 @@ uint32_t strcspn(const char *s1, const char *s2);
  * 
  * @returns The next token in the string, or `NULL` when no tokens remain.
  */
-char* strtok_r(char *s, char *delim, char **save_ptr);
+char* strtok_r(char *s, const char *delim, char **save_ptr);
 
 #endif

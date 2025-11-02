@@ -67,11 +67,13 @@ uint32_t strcspn(const char *s1, const char *s2) {
     return len;
 }
 
-char* strtok_r(char *s, char *delim, char **save_ptr) {
+char* strtok_r(char *s, const char *delim, char **save_ptr) {
     char *token;
 
     if (delim == NULL)
         return NULL;
+    if (s == NULL)
+        s = *save_ptr;
     if (s == NULL)
         return NULL;
 

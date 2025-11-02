@@ -15,6 +15,7 @@ extern char _binary_shell_bin_start[], _binary_shell_bin_size[];
 
 void kmain(void) {
 	printf("\n\n");
+	
 	// Initialize kernel
 	init_memory();
 	init_trap_handler();
@@ -23,7 +24,7 @@ void kmain(void) {
 	// File Handling
 	virtio_blk_init();
 	init_ext2();
-	struct inode *node = get_inode("hello.txt");
+	struct inode *node = get_inode("testdir/testfile.txt");
 	char* text = read_block(node->direct_block_pointer[0]);
 	printf("\n%s\n", text);
 

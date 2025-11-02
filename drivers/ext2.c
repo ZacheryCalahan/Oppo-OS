@@ -163,6 +163,7 @@ struct inode* get_inode(char* path) {
 
         // Read through entire block of entries
         uint32_t block_idx = 0;
+        printf("Searching for: \"%s\"\n", current_path_item);
         for (; block_idx < block_size;) {
             // Check that this entry is not empty.
             if (entry->inode == 0) {
@@ -198,16 +199,18 @@ struct inode* get_inode(char* path) {
 
                 if (current_path_item == NULL) {
                     // Last path item, return the i_node.
+                    printf("End of path chain.\n");
                     return i_node;
                 }
 
                 // Not last item, traverse next dir level.
                 kfree_size(current_node, PAGE_SIZE); // Free the old inode
+                printf("Entering directory:\n\t%s\n", entry_name);
                 current_node = i_node;
 
                 // Reset things in prep of next dir traversal.
-                block_number = 0;
-
+                block_number = 0 - 1; // Easier than handling logic for the break, just account for the increment later.
+                break;
             }
 
             // Not the right entry, try the next.
