@@ -9,11 +9,13 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include "../../drivers/headers/ext2.h"
+
 struct FILE {
-    int in_use;         // Intended to prevent writes over in use file handler. Should be handled by fs.h.
-    uint64_t size;      // Size of the file in bytes.
-    uint8_t attributes; // Attributes of the file.
-    char data[];        // All data of the file.
+    uint64_t file_offset;       // The current offset into the file being read
+    uint16_t access_mode;       // The permissions of the file
+    struct inode *inode;        // The inode of the file
+    uint32_t refrence_count;    // The amount of references to this file
 };
 
 
@@ -21,9 +23,9 @@ struct FILE {
  * Retrieves a file from the filesystem for user use.
  * 
  * @param path The path to the file.
- * @return `struct FILE` containing file data.
+ * @return File descriptor number representing the file in memory.
  */
-struct FILE *open_file(const char* path);
+int open_file(const char* path);
 
 /**
  * Closes a file and returns the file space back to the allocator.
@@ -35,8 +37,7 @@ void close_file(struct FILE *file);
 /**
  * Writeback to the file pointed to by `struct FILE file`.
  * 
- * @param path Path to the file.
  * @param file Pointer to the FILE.
  */
-void flush_file(const char* path, struct FILE *file);
+void flush_file(struct FILE *file);
 #endif

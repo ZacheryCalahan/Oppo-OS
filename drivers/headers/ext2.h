@@ -2,6 +2,7 @@
 #define EXT2_H
 
 #include <stdint.h>
+#include <stddef.h>
 
 // Supported features by this current implementation.
 #define SUPPORTS_MAJOR_VERSION          1
@@ -114,18 +115,7 @@ struct inode {
     uint32_t count_disk_sectors; // Count of disk sectors in use by the inode, no including the inode structure nor dir entries linked.
     uint32_t flags;
     uint32_t os_specific_value_1;
-    uint32_t direct_block_pointer_0;
-    uint32_t direct_block_pointer_1;
-    uint32_t direct_block_pointer_2;
-    uint32_t direct_block_pointer_3;
-    uint32_t direct_block_pointer_4;
-    uint32_t direct_block_pointer_5;
-    uint32_t direct_block_pointer_6;
-    uint32_t direct_block_pointer_7;
-    uint32_t direct_block_pointer_8;
-    uint32_t direct_block_pointer_9;
-    uint32_t direct_block_pointer_10;
-    uint32_t direct_block_pointer_11;
+    uint32_t direct_block_pointer[12];
     uint32_t single_indirect_block_pointer;
     uint32_t double_indirect_block_pointer;
     uint32_t triply_indirect_block_pointer;
@@ -135,7 +125,8 @@ struct inode {
     uint32_t block_address_of_fragment;
     uint8_t  os_specific_value_2[12];
 
-} __attribute__((packed));
+} __attribute__((packed)) __attribute__((aligned(256)));
+
 
 // Top 4 bits of inode_permissions_type
 enum inode_type {
@@ -180,10 +171,10 @@ enum inode_flags {
 
 struct directory_entry {
     uint32_t inode;
-    uint16_t total_size;
+    uint16_t rec_len;        // Total length of the entry
     uint8_t  name_len_lsb_8; // Name length least-significant 8 bits
-    uint8_t  type_indicator; // if "dir entry have file type byte", then type indicator. Otherwise, most-significant 9 bits of name length.
-    char*    name;           // Name of the dir 
+    uint8_t  type_indicator; // Type indicator (we don't allow > 256 chars in names.)
+    char*    name;           // Name of the dir
 } __attribute__((packed));
 
 enum dir_entry_type_indicators {
@@ -212,5 +203,21 @@ enum dir_entry_type_indicators {
 #define RO_FEAT_DIR_CONTENTS_BINARY_TREE    (1 << 2)
 
 void init_ext2(void);
+void* read_block(uint32_t block_num);
+
+/** 
+ * Returns the `struct inode` for the root directory. Returns null on error. 
+ * Size of `inode` is saved in one page.
+*/
+struct inode* get_root_inode(void);
+
+/**
+ * Retrieves an inode from a given path, or NULL if not found.
+ * 
+ * @param path String of *nix style path.
+ * 
+ * @returns Inode structure of the given file.
+ */
+struct inode* get_inode(char* path);
 
 #endif

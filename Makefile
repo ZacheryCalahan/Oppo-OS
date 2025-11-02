@@ -18,28 +18,6 @@ QEMUOPTS += -monitor mon:stdio
 #QEMUOPTS += -d unimp,guest_errors,int,cpu_reset -D qemu.log # Specific to debugging traps, comment when not in use. (MAKES LARGE FILES!)
 
 ################################### Build Targets  ###################################
-
-generate_dts: kernel.elf
-	@qemu-system-riscv64 $(QEMUOPTS) -kernel kernel.elf -machine dumpdtb=riscv64-virt.dtb
-	@dtc -I dtb -O dts riscv64-virt.dtb -o riscv64-virt.dts
-	@rm riscv64-virt.dtb
-	@mv riscv64-virt.dts misc/riscv64-virt.dts
-
-# Generate a 128MB FAT32 filesystem
-generate_new_fat32:
-	qemu-img create -f raw disk.img 128M
-	mkfs.fat -F 32 disk.img
-
-# Make a backup of the filesystem
-backup_file_system:
-	cp disk.img misc/disk.img
-	echo "Backup created in misc/disk.img"
-
-# Restore backup
-restore_backup:
-	rm disk.img
-	cp misc/disk.img disk.img
-
 debug: kernel.elf
 	@qemu-system-riscv64 $(QEMUOPTS) -kernel kernel.elf -s -S &
 	$(GDB) kernel.elf 
@@ -68,7 +46,40 @@ kernel.elf: ${OBJ} boot/entry.o user/shell.bin.o
 
 
 ################################### Phony Targets ####################################
-.PHONY: clean
+
+# Generate a device tree blob
+generate_dts: kernel.elf
+	@qemu-system-riscv64 $(QEMUOPTS) -kernel kernel.elf -machine dumpdtb=riscv64-virt.dtb
+	@dtc -I dtb -O dts riscv64-virt.dtb -o riscv64-virt.dts
+	@rm riscv64-virt.dtb
+	@mv riscv64-virt.dts misc/riscv64-virt.dts
+
+# Generate a 128MB FAT32 filesystem
+generate_new_fat32:
+	qemu-img create -f raw disk.img 128M
+	mkfs.fat -F 32 disk.img
+
+# Make a backup of the filesystem
+backup_file_system:
+	cp disk.img misc/disk.img
+	echo "Backup created in misc/disk.img"
+
+# Restore backup
+restore_backup:
+	rm disk.img
+	cp misc/disk.img disk.img
+
+# Mount the disk.img to .mnt
+mount_disk:
+	mkdir -p .mnt
+	sudo mount -o loop disk.img .mnt
+
+# Unmount the disk.img from .mnt
+unmount_disk:
+	sudo umount .mnt
+	rm -rf .mnt
+
+# Clean directories of build files
 clean:
 	@find . -type f -name '*.o' -delete
 	@find . -type f -name 'kernel.sym' -delete

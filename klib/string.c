@@ -43,3 +43,61 @@ uint32_t strcmp(char *a, char *b) {
             return diff;
     }
 }
+
+char* strchr(const char *s, char c) {
+    char x = c;
+    if (s == NULL) 
+        return NULL;
+    
+    for (;;) {
+        if (*s == x)
+            return (char *) s;
+        else if (*s == '\0')
+            return NULL;
+        else
+            s++;
+    }
+}
+
+uint32_t strcspn(const char *s1, const char *s2) {
+    uint32_t len;
+    for (len = 0; s1[len] != '\0'; len++) 
+        if (strchr(s2, s1[len]) != NULL)
+            break;
+    return len;
+}
+
+char* strtok_r(char *s, char *delim, char **save_ptr) {
+    char *token;
+
+    if (delim == NULL)
+        return NULL;
+    if (s == NULL)
+        return NULL;
+
+    // Skip delims at our current pos
+    while (strchr(delim, *s) != NULL) {
+        if (*s == '\0') {
+            *save_ptr = s;
+            return NULL;
+        }
+
+        s++;
+    }
+
+    // Skip any non-delims up until end of string
+    token = s;
+    while (strchr(delim, *s) == NULL)
+        s++;
+
+    if (*s != '\0') {
+        *s = '\0';
+        *save_ptr = s + 1;
+    } else {
+        *save_ptr = s;
+    }
+        
+    return token;
+    
+
+}

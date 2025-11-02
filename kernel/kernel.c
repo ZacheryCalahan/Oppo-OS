@@ -20,8 +20,15 @@ void kmain(void) {
 	init_trap_handler();
 	init_proc();
 
+	// File Handling
 	virtio_blk_init();
 	init_ext2();
+	struct inode *node = get_inode("hello.txt");
+	char* text = read_block(node->direct_block_pointer[0]);
+	printf("\n%s\n", text);
+
+	
+
 	
 	//virtio_gpu_init();
 
