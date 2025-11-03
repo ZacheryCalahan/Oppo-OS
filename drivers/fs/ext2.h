@@ -21,6 +21,22 @@
 #define SUPPORTS_64BIT_FILE_SIZE        1
 #define SUPPORTS_DIR_CONTENTS_BIN_TREE  0
 
+#define OPT_FEAT_PREALLOCATE_BLKS_IN_DIR    (1 << 0)
+#define OPT_FEAT_AFS_SERVER_INODES_EXIST    (1 << 1)
+#define OPT_FEAT_FS_HAS_JOURNAL             (1 << 2)
+#define OPT_FEAT_INODE_EXT_ATTR             (1 << 3)
+#define OPT_FEAT_FS_RESIZEABLE              (1 << 4)
+#define OPT_FEAT_FS_DIR_HASH_INDEX          (1 << 5)
+#define REQ_FEAT_COMPRESSION                (1 << 0)
+#define REQ_FEAT_DIR_ENTRY_TYPE_FIELD       (1 << 1)
+#define REQ_FEAT_FS_REPLAY_JOURNAL          (1 << 2)
+#define REQ_FEAT_FS_JOURNAL_DEVICE          (1 << 3)
+#define RO_FEAT_SPARSE_SBLOCK_GROUP_DES_T   (1 << 0)
+#define RO_FEAT_64BIT_FILE_SIZE             (1 << 1)
+#define RO_FEAT_DIR_CONTENTS_BINARY_TREE    (1 << 2)
+
+extern uint32_t ext2_block_size;
+
 enum file_system_state {
     CLEAN_FILE_SYSTEM = 1,
     ERROR_FILE_SYSTEM = 2
@@ -188,25 +204,25 @@ enum dir_entry_type_indicators {
     INDICATOR_TYPE_SOFT_SYM_LINK,
 };
 
-#define OPT_FEAT_PREALLOCATE_BLKS_IN_DIR    (1 << 0)
-#define OPT_FEAT_AFS_SERVER_INODES_EXIST    (1 << 1)
-#define OPT_FEAT_FS_HAS_JOURNAL             (1 << 2)
-#define OPT_FEAT_INODE_EXT_ATTR             (1 << 3)
-#define OPT_FEAT_FS_RESIZEABLE              (1 << 4)
-#define OPT_FEAT_FS_DIR_HASH_INDEX          (1 << 5)
-#define REQ_FEAT_COMPRESSION                (1 << 0)
-#define REQ_FEAT_DIR_ENTRY_TYPE_FIELD       (1 << 1)
-#define REQ_FEAT_FS_REPLAY_JOURNAL          (1 << 2)
-#define REQ_FEAT_FS_JOURNAL_DEVICE          (1 << 3)
-#define RO_FEAT_SPARSE_SBLOCK_GROUP_DES_T   (1 << 0)
-#define RO_FEAT_64BIT_FILE_SIZE             (1 << 1)
-#define RO_FEAT_DIR_CONTENTS_BINARY_TREE    (1 << 2)
+
 
 void init_ext2(void);
 void* read_block(uint32_t block_num);
 
+/**
+ * Get the block address of the data pointed to by a block index of an inode.
+ * 
+ * @param i_node The inode to retrieve data from
+ * @param block_index The index of the block to retrieve
+ * 
+ * @returns The block address of the data requested.
+ */
+uint32_t get_block_address(struct inode *i_node, uint32_t block_index);
+
 /** 
- * Returns the `struct inode` for the root directory. Returns null on error. 
+ * Retrieves the root directory inode.
+ * 
+ * @returns the `struct inode` for the root directory. Returns null on error. 
  * Size of `inode` is saved in one page.
 */
 struct inode* get_root_inode(void);

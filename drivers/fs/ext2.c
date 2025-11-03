@@ -4,12 +4,14 @@
 #include "../../klib/stdlib.h"
 #include "../../klib/stdio.h"
 
-uint32_t block_size;
-uint32_t inode_count;
-uint32_t block_count;
-uint32_t blocks_per_bgroup;
-uint32_t inodes_per_bgroup;
-uint32_t inode_size_bytes;
+uint32_t NUM_INDIRECT_BLOCKS; // Number of block pointers in a single direct block
+
+uint32_t ext2_block_size;
+uint32_t ext2_inode_count;
+uint32_t ext2_block_count;
+uint32_t ext2_blocks_per_bgroup;
+uint32_t ext2_inodes_per_bgroup;
+uint32_t ext2_inode_size_bytes;
 int is_read_only;
 
 void init_ext2() {
@@ -21,18 +23,20 @@ void init_ext2() {
     }
 
     // Extracts
-    block_size = (1024 << superblock->block_size_shift);
-    printf("EXT2: Block size: %d\n", block_size);
-    inode_count = superblock->inode_count;
-    printf("EXT2: Inode Count: %d\n", inode_count);
-    block_count = superblock->block_count;
-    printf("EXT2: Block Count: %d\n", block_count);
-    blocks_per_bgroup = superblock->blocks_in_block_group;
-    printf("EXT2: Blocks per Block Group: %d\n", blocks_per_bgroup);
-    inodes_per_bgroup = superblock->inodes_in_block_group;
-    printf("EXT2: Inodes per Block Group: %d\n", inodes_per_bgroup);
-    inode_size_bytes = superblock->esb.size_inode_bytes;
-    printf("EXT2: Inode Size: %d\n", inode_size_bytes);
+    ext2_block_size = (1024 << superblock->block_size_shift);
+    printf("EXT2: Block size: %d\n", ext2_block_size);
+    ext2_inode_count = superblock->inode_count;
+    printf("EXT2: Inode Count: %d\n", ext2_inode_count);
+    ext2_block_count = superblock->block_count;
+    printf("EXT2: Block Count: %d\n", ext2_block_count);
+    ext2_blocks_per_bgroup = superblock->blocks_in_block_group;
+    printf("EXT2: Blocks per Block Group: %d\n", ext2_blocks_per_bgroup);
+    ext2_inodes_per_bgroup = superblock->inodes_in_block_group;
+    printf("EXT2: Inodes per Block Group: %d\n", ext2_inodes_per_bgroup);
+    ext2_inode_size_bytes = superblock->esb.size_inode_bytes;
+    printf("EXT2: Inode Size: %d\n", ext2_inode_size_bytes);
+
+    NUM_INDIRECT_BLOCKS = ext2_block_size / sizeof(uint32_t);
 
     // Check required features (if major >= 1.)
     if (superblock->major_version >= 1) {
@@ -111,13 +115,54 @@ struct inode* get_root_inode() {
     // Allocate room for the root inode to return.
     struct inode *root_inode = kalloc(1);
     struct inode *src_inode = &inode_table[1]; // Root node is always inode number 2. (inodes are indexed at 1, so 2nd member)
-    memcpy(root_inode, src_inode, inode_size_bytes);
+    memcpy(root_inode, src_inode, ext2_inode_size_bytes);
 
     // Free used resources.
     kfree_size(bgdt, PAGE_SIZE);
     kfree_size(inode_table, PAGE_SIZE);
     
     return root_inode;
+}
+
+uint32_t get_block_address(struct inode *i_node, uint32_t block_index) {
+    if (block_index < 12) {
+        // Direct block pointer
+        return i_node->direct_block_pointer[block_index];
+    } else if (block_index < 12 + NUM_INDIRECT_BLOCKS) {
+        // Single indirect block pointer
+        uint32_t *indirect_block = read_block(i_node->single_indirect_block_pointer);
+        uint32_t block_ptr = indirect_block[block_index - 12];
+        kfree_size(indirect_block, PAGE_SIZE); // Don't leak memory ya fool!
+        return block_ptr;
+    } else if (block_index < 12 + NUM_INDIRECT_BLOCKS + NUM_INDIRECT_BLOCKS * NUM_INDIRECT_BLOCKS) {
+        // Double indirect block pointer
+        uint32_t double_offset = block_index - 12 - NUM_INDIRECT_BLOCKS;
+        uint32_t double_block_offset = double_offset / NUM_INDIRECT_BLOCKS;
+        uint32_t single_block_offset = double_offset % NUM_INDIRECT_BLOCKS;
+
+        uint32_t *double_indirect = read_block(i_node->double_indirect_block_pointer);
+        uint32_t *indirect_block = read_block(double_indirect[double_block_offset]);
+        uint32_t block_ptr = indirect_block[single_block_offset];
+        kfree_size(double_indirect, PAGE_SIZE);
+        kfree_size(indirect_block, PAGE_SIZE);
+        return block_ptr;
+    } else {
+        // Triply indirect block pointer
+        uint32_t triple_offset = block_index - 12 - NUM_INDIRECT_BLOCKS - NUM_INDIRECT_BLOCKS * NUM_INDIRECT_BLOCKS * NUM_INDIRECT_BLOCKS;
+        uint32_t triple_block_offset = triple_offset / (NUM_INDIRECT_BLOCKS * NUM_INDIRECT_BLOCKS);
+        uint32_t rem = triple_offset % (NUM_INDIRECT_BLOCKS * NUM_INDIRECT_BLOCKS);
+        uint32_t double_block_offset = rem / NUM_INDIRECT_BLOCKS;
+        uint32_t single_block_offset = rem % NUM_INDIRECT_BLOCKS;
+
+        uint32_t *triple_indirect = read_block(i_node->triply_indirect_block_pointer);
+        uint32_t *double_indirect = read_block(triple_indirect[triple_block_offset]);
+        uint32_t *single_indirect = read_block(double_indirect[double_block_offset]);
+        uint32_t block_ptr = single_indirect[single_block_offset];
+        kfree_size(triple_indirect, PAGE_SIZE);
+        kfree_size(double_indirect, PAGE_SIZE);
+        kfree_size(single_indirect, PAGE_SIZE);
+        return block_ptr;
+    }
 }
 
 /**
@@ -127,8 +172,8 @@ struct inode* find_inode(uint32_t addr) {
     struct inode *i_node;
     
     // Gather information on where the inode is
-    uint32_t inode_block_group = ((addr - 1) / inodes_per_bgroup); // Which block group the inode is in
-    uint32_t index = (addr - 1) % inodes_per_bgroup; // Index into the block group's inode_table
+    uint32_t inode_block_group = ((addr - 1) / ext2_inodes_per_bgroup); // Which block group the inode is in
+    uint32_t index = (addr - 1) % ext2_inodes_per_bgroup; // Index into the block group's inode_table
 
     // Retrieve the inode
     struct block_group_descriptor_table *bgdt = read_block(1);
@@ -153,7 +198,7 @@ struct inode* get_inode(char* path) {
         if (block_number < 12) {
             // Direct block pointer
             entry = read_block(current_node->direct_block_pointer[block_number]);
-        } else if (block_number < (block_size + 12)) {
+        } else if (block_number < (ext2_block_size + 12)) {
             // Single indirect block pointer
             uint32_t *blocks = read_block(current_node->single_indirect_block_pointer); // Array of direct block pointers
             entry = read_block(blocks[block_number - 12]);
@@ -167,7 +212,7 @@ struct inode* get_inode(char* path) {
         // Read through entire block of entries
         uint32_t block_idx = 0;
         printf("Searching for: \"%s\"\n", current_path_item);
-        for (; block_idx < block_size;) {
+        for (; block_idx < ext2_block_size;) {
             // Check that this entry is not empty.
             if (entry->inode == 0) {
                 // Skip this entry.

@@ -15,7 +15,7 @@ enum device_class {
     DEV_CLASS_NET,
 };
 
-typedef struct device_t {
+struct device_t {
     const char *name;                               // Human readable name of the device.
     const uint32_t dev_id;                          // Unique ID of the device.
 

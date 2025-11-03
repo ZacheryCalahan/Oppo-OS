@@ -25,14 +25,15 @@ void kmain(void) {
 	virtio_blk_init();
 	init_ext2();
 
-
-	struct inode *node = get_inode("hello.txt");
-	if (node == NULL) {
-		PANIC("inode not found!");
+	// test of fs implementation
+	filedec_t file = open_file("hello.txt", O_RW);
+	char* buf = kalloc(1);
+	while (read_file(file, buf, PAGE_SIZE)) { // Read in all available bytes
+		printf("\n%s\n", buf);
 	}
 
-	char* text = read_block(node->direct_block_pointer[0]);
-	printf("\n%s\n", text);
+	close_file(file);
+	kfree_size(buf, PAGE_SIZE);
 
 	//virtio_gpu_init();
 
