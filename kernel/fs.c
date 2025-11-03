@@ -11,9 +11,9 @@
 /**
  * Retains all opened files in use.
  */
-struct FILE_TABLE {
+struct file_descriptor_table {
     struct FILE file_descriptors[256];
-};
+} file_desc_table;
 
 int open_file(const char* path) {
     // Retrieve the inode for the file from the path
@@ -21,15 +21,15 @@ int open_file(const char* path) {
 
 }
 
-void* read_file(struct FILE* file) {
+void* read_file(filedec_t file) {
 
 }
 
-void flush_file(struct FILE *file) {
+void flush_file(filedec_t file) {
 
 }
 
-void close_file(struct FILE *file) {
+void close_file(filedec_t file) {
     
 }
 

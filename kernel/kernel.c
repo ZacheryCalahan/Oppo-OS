@@ -34,11 +34,7 @@ void kmain(void) {
 	char* text = read_block(node->direct_block_pointer[0]);
 	printf("\n%s\n", text);
 
-	
-
-	
 	//virtio_gpu_init();
-
 
 	// Allow the scheduler to take control, and move to userspace!
 	create_process(_binary_shell_bin_start, (size_t) _binary_shell_bin_size);
