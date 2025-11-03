@@ -1,9 +1,9 @@
-#include "headers/proc.h"
-#include "headers/kernel.h"
-#include "../klib/headers/stdlib.h"
-#include "../klib/headers/stdio.h"
-#include "../arch/headers/paging.h" // Must be changed if HAL is implemented.
-#include "../drivers/headers/virtio.h"
+#include "proc.h"
+#include "../kernel.h"
+#include "../../klib/stdlib.h"
+#include "../../klib/stdio.h"
+#include "../../arch/paging.h" // Must be changed if HAL is implemented.
+#include "../../drivers/virtio/virtio.h"
 #include <stddef.h>
 
 #define PROCS_MAX 8 // Max processes that can be registered to the scheduler at a given time

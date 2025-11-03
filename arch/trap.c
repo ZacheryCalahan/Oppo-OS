@@ -1,7 +1,7 @@
-#include "headers/trap.h"
-#include "../kernel/headers/kernel.h"
-#include "../klib/headers/stdio.h"
-#include "../kernel/headers/proc.h"
+#include "trap.h"
+#include "../kernel/kernel.h"
+#include "../klib/stdio.h"
+#include "../kernel/schedule/proc.h"
 
 #include <stdint.h>
 

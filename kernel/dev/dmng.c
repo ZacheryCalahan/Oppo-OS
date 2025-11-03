@@ -2,7 +2,7 @@
     Device manager
 */
 
-#include "headers/dmng.h"
+#include "dmng.h"
 
 void dmng_init() {
     

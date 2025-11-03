@@ -1,5 +1,5 @@
-#include "headers/user.h"
-#include "libc/headers/stdio.h"
+#include "../user.h"
+#include "../libc/stdio.h"
 
 void main(void) {
     while(1) {

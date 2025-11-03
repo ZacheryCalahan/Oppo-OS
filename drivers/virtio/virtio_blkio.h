@@ -1,5 +1,5 @@
-#ifndef BLKIO_H
-#define BLKIO_H
+#ifndef VIRTIO_BLKIO_H
+#define VIRTIO_BLKIO_H
 
 #include <stdint.h>
 

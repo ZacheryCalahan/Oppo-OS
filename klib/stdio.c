@@ -1,6 +1,6 @@
-#include "headers/stdio.h"
-#include "../drivers/headers/uart.h"
-#include "../drivers/headers/sbi.h"
+#include "stdio.h"
+#include "../drivers/char_dev/uart.h"
+#include "../drivers/boot/sbi.h"
 
 long getc() {
     return sbi_getc();

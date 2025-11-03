@@ -1,6 +1,6 @@
-#include "headers/paging.h"
-#include "../klib/headers/stdlib.h"
-#include "../kernel/headers/kernel.h"
+#include "paging.h"
+#include "../klib/stdlib.h"
+#include "../kernel/kernel.h"
 
 /**
    Maps a page of memory at the specified virtual address to the page tables used by the MMU

@@ -1,5 +1,5 @@
-#include "headers/stdio.h"
-#include "../headers/user.h"
+#include "stdio.h"
+#include "../user.h"
 
 
 void puts(const char *str) {

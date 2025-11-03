@@ -1,8 +1,8 @@
-#include "headers/fat.h"
-#include "headers/blkio.h" // We'll just assume this device for now!
-#include "../kernel/headers/kernel.h"
-#include "../klib/headers/stdlib.h"
-#include "../klib/headers/stdio.h"
+#include "fat.h"
+#include "../virtio/virtio_blkio.h"       // We'll just assume this device for now!
+#include "../../kernel/kernel.h"
+#include "../../klib/stdlib.h"
+#include "../../klib/stdio.h"
 
 // Needed data for FAT parsing
 uint64_t fat_begin_lba;             // First sector of the FAT

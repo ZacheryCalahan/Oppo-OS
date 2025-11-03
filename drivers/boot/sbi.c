@@ -1,5 +1,5 @@
-#include "headers/sbi.h"
-#include "../kernel/headers/kernel.h"
+#include "sbi.h"
+#include "../../kernel/kernel.h"
 
 struct sbiret sbi_call(uint64_t arg0,
     uint64_t arg1,

@@ -1,4 +1,4 @@
-#include "headers/uart.h"
+#include "uart.h"
 
 void uart_init() {
     // Disable interrupts so we can set up uart settings

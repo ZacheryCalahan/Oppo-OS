@@ -9,7 +9,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#include "../../drivers/headers/ext2.h"
+#include "../../drivers/fs/ext2.h"
 
 typedef uint32_t filedec_t;
 

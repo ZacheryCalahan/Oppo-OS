@@ -1,7 +1,7 @@
 #ifndef KERNEL_H
 #define KERNEL_H
 
-#include "../../klib/headers/stdio.h"
+#include "../klib/stdio.h"
 
 // Syscall numbers are defined once here, and once again in the userspace.
 

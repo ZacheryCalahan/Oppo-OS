@@ -1,6 +1,6 @@
-#include "headers/virtio.h"
-#include "../klib/headers/stdlib.h"
-#include "../kernel/headers/kernel.h"
+#include "virtio.h"
+#include "../../klib/stdlib.h"
+#include "../../kernel/kernel.h"
 
 uint32_t virtio_reg_read32(unsigned port, unsigned offset) {
     return *((volatile uint32_t *) ((VIRTIO_PADDR + (port * 0x1000)) + offset));

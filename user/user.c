@@ -1,4 +1,4 @@
-#include "headers/user.h"
+#include "user.h"
 
 #define SYS_PUTC 1
 #define SYS_GETC 2

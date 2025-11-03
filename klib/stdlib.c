@@ -1,5 +1,5 @@
-#include "headers/stdlib.h"
-#include "headers/stdio.h"
+#include "stdlib.h"
+#include "stdio.h"
 
 /*
     Buddy allocator!

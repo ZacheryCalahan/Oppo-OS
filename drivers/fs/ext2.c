@@ -1,8 +1,8 @@
-#include "headers/ext2.h"
-#include "headers/blkio.h"
-#include "../kernel/headers/kernel.h"
-#include "../klib/headers/stdlib.h"
-#include "../klib/headers/stdio.h"
+#include "ext2.h"
+#include "../virtio/virtio_blkio.h"
+#include "../../kernel/kernel.h"
+#include "../../klib/stdlib.h"
+#include "../../klib/stdio.h"
 
 uint32_t block_size;
 uint32_t inode_count;

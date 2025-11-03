@@ -1,4 +1,4 @@
-#include "headers/string.h"
+#include "string.h"
 
 uint32_t strlen(char *a) {
     uint32_t len = 0;

@@ -2,11 +2,11 @@
     NOTE: This assumes only one blk_io device at a time!
 */
 
-#include "headers/blkio.h"
-#include "headers/virtio.h"
-#include "../klib/headers/stdio.h"
-#include "../klib/headers/stdlib.h"
-#include "../kernel/headers/kernel.h"
+#include "virtio_blkio.h"
+#include "virtio.h"
+#include "../../klib/stdio.h"
+#include "../../klib/stdlib.h"
+#include "../../kernel/kernel.h"
 
 struct virt_queue *blk_request_vq;
 struct virtio_blk_req *blk_req;

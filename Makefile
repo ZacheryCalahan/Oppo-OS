@@ -1,4 +1,4 @@
-C_SOURCES = $(wildcard kernel/*.c drivers/*.c klib/*.c arch/*.c)
+C_SOURCES = $(shell find . -type f -name '*.c' ! -path './user/*')
 S_SOURCES = $(wildcard boot/*.s)
 OBJ = $(C_SOURCES:.c=.o)
 
@@ -28,7 +28,8 @@ run: kernel.elf
 # I'm aware this may be scuffed, I'm wrapping my head around a better way to handle
 # stuff like this. Stay tuned!
 user/shell.bin.o:
-	$(MAKE) -C user -B # Force to remake user apps
+# Force to remake user apps
+	$(MAKE) -C user -B 
 
 build: kernel.elf
 	@echo "Built!"

@@ -1,8 +1,8 @@
-#include "headers/virtio_gpu.h"
-#include "headers/virtio.h"
-#include "../klib/headers/stdio.h"
-#include "../klib/headers/stdlib.h"
-#include "../kernel/headers/kernel.h"
+#include "virtio_gpu.h"
+#include "virtio.h"
+#include "../../klib/stdio.h"
+#include "../../klib/stdlib.h"
+#include "../../kernel/kernel.h"
 
 #define GPU_DEFAULT_WIDTH 640
 #define GPU_DEFAULT_HEIGHT 480

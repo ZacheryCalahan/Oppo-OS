@@ -1,7 +1,7 @@
-#include "headers/fs.h"
-#include "../drivers/headers/fat.h"
-#include "../klib/headers/stdlib.h"
-#include "../klib/headers/stdio.h"
+#include "fs.h"
+#include "../../drivers/fs/fat.h"
+#include "../../klib/stdlib.h"
+#include "../../klib/stdio.h"
 
 /*
     API to work with filesystems, non-specific fs implementations should be here.

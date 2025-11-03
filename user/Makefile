@@ -1,4 +1,4 @@
-C_SOURCES = $(wildcard *.c libc/*.c)
+C_SOURCES = $(wildcard *.c libc/*.c shell/*.c)
 S_SOURCES = $(wildcard *.s)
 OBJ = $(C_SOURCES:.c=.o)
 

@@ -1,13 +1,13 @@
-#include "headers/kernel.h"
-#include "headers/proc.h"
-#include "headers/fs.h"
-#include "../klib/headers/string.h"
-#include "../klib/headers/stdlib.h"
-#include "../arch/headers/trap.h"
-#include "../arch/headers/paging.h"
-#include "../drivers/headers/blkio.h"
-#include "../drivers/headers/ext2.h"
-#include "../drivers/headers/virtio_gpu.h"
+#include "kernel.h"
+#include "schedule/proc.h"
+#include "fs/fs.h"
+#include "../klib/string.h"
+#include "../klib/stdlib.h"
+#include "../arch/trap.h"
+#include "../arch/paging.h"
+#include "../drivers/virtio/virtio_blkio.h"
+#include "../drivers/fs/ext2.h"
+#include "../drivers/virtio/virtio_gpu.h"
 
 #include <stdint.h>
 
