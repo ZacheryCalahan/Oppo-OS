@@ -14,7 +14,7 @@
  */
 struct FILE file_descriptors[MAX_DESCRIPTORS];
 
-filedec_t open_file(const char* path, enum FILE_ACCESS_PERMISSIONS perms) {
+int32_t open_file(const char* path, enum FILE_ACCESS_PERMISSIONS perms) {
     // Retrieve the inode for the file from the path
     struct inode *i_node = get_inode(path);
 
@@ -34,7 +34,7 @@ filedec_t open_file(const char* path, enum FILE_ACCESS_PERMISSIONS perms) {
     }
 
     // Search for an empty descriptor
-    filedec_t desc_idx = -1;
+    int32_t desc_idx = -1;
     for (int i = 0; i < MAX_DESCRIPTORS; i++) {
         if (file_descriptors[i].refrence_count == 0) {
             desc_idx = i;
@@ -57,7 +57,7 @@ filedec_t open_file(const char* path, enum FILE_ACCESS_PERMISSIONS perms) {
     return desc_idx;
 }
 
-int64_t read_file(filedec_t file_desc, void *buf, uint32_t size) {
+int64_t read_file(int32_t file_desc, void *buf, uint32_t size) {
     // Retrieve the inode for the file
     struct FILE *f = &file_descriptors[file_desc];
     struct inode *i_node = f->inode;
@@ -71,40 +71,50 @@ int64_t read_file(filedec_t file_desc, void *buf, uint32_t size) {
     }
 
     // Read in data
-    int64_t bytes_read = 0;
+    int64_t bytes_read = 0; // Counter for return value.
     uint8_t *block; // Temporary storage for the current read block
-    uint32_t block_idx = 0; // Index into the block.
     uint32_t size_left = size; // Remaining bytes to read into the buffer
-    uint32_t buffer_offset = 0; // Current buffer offset to write to.
-    uint32_t file_size = (i_node->high_size << 32) || (i_node->low_size); // Size of the file in bytes
-    uint32_t bytes_left_in_file = file_size - f->file_pointer; // Remaining bytes to read
+    uint32_t offset = 0; // Current offset into the buffer and block
+    uint64_t file_size = i_node->low_size + (i_node->high_size << 32); // Size of the file in bytes
+    uint32_t remaining_bytes = file_size - f->file_pointer; // Remaining bytes to read
 
     for (; size_left > 0;) { // Read in a block at a time
         // Determine which block to read.
         uint32_t current_offset_block = f->file_pointer / ext2_block_size; // How many blocks of pointers into the inode to start the read from.
         uint32_t block_address = get_block_address(i_node, current_offset_block);
 
+        // Retrieve the block
+        block = read_block(block_address);
+
         // memcpy basically. This isn't efficient, but it is intuitive. Use memcpy() later for efficiency.
         uint8_t *buffer = buf; // Cast to malleable type
-        while (bytes_left_in_file && block_idx < ext2_block_size) {
-            buffer[buffer_offset] = block[block_idx]; // Read in the byte
-            block_idx++;
+        while (remaining_bytes && offset < ext2_block_size && size_left > 0) {
+            buffer[offset + (current_offset_block * ext2_block_size)] = block[offset]; // Read in the byte
+            offset++;
+            size_left--;
             bytes_read++;
             f->file_pointer++;
+            remaining_bytes--;
+        }
+
+        // Return if EOF
+        if (remaining_bytes == 0) {
+            break;
         }
 
         // Reset block state after reading in block.
-        block_idx = 0; 
+        offset = 0;
+        kfree_size(block, PAGE_SIZE); // Free up for next call
     }
 
     return bytes_read;
 }
 
-void flush_file(filedec_t file_desc) {
+void flush_file(int32_t file_desc) {
 
 }
 
-void close_file(filedec_t file_desc) {
+void close_file(int32_t file_desc) {
     struct FILE *file = &file_descriptors[file_desc];
 
     // Decrement the reference counter

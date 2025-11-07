@@ -2,13 +2,6 @@
 #include "../klib/stdlib.h"
 #include "../kernel/kernel.h"
 
-/**
-   Maps a page of memory at the specified virtual address to the page tables used by the MMU
-  
-   @param vaddr Virtual address where the page should be mapped.
-   @param paddr Physical address of the page to map.
-   @param flags Permissions of the page
- */
 void map_page(uint64_t *root_table, uint64_t vaddr, uint64_t paddr, uint32_t flags) {
     if (!is_aligned(vaddr, PAGE_SIZE)) {
         PANIC("unaligned vaddr %x", vaddr);
@@ -43,4 +36,24 @@ void map_page(uint64_t *root_table, uint64_t vaddr, uint64_t paddr, uint32_t fla
     table0[vpn0] = (PPN_MASK & ((paddr / PAGE_SIZE) << 10)) | flags | PAGE_V; // Assign a new PTE. (Leaf)
 }
 
+uint64_t *vaddr_to_paddr(uint64_t *root_table, uint64_t vaddr) {
+    uint64_t vpn2 = (vaddr >> VPN2_SHIFT) & VPN_MASK;
+    uint64_t pte2 = root_table[vpn2];
+    if ((pte2 & PAGE_V) == 0) return NULL; // Not mapped
 
+    uint64_t *table1 = (uint64_t *) ((pte2 >> 10) << PAGE_SHIFT);
+    uint64_t vpn1 = (vaddr >> VPN1_SHIFT) & VPN_MASK;
+    uint64_t pte1 = table1[vpn1];
+    if ((pte1 & PAGE_V) == 0) return NULL; // Not mapped
+
+    uint64_t *table0 = (uint64_t *) ((pte1 >> 10) << PAGE_SHIFT);
+    uint64_t vpn0 = (vaddr >> VPN0_SHIFT) & VPN_MASK;
+    uint64_t pte0 = table0[vpn0];
+    if ((pte0 & PAGE_V) == 0) return NULL; // Not mapped
+
+    // Extract physical page number and offset
+    uint64_t ppn = (pte0 >> 10) & PPN_MASK;
+    uint64_t page_offset = vaddr & (PAGE_SIZE - 1);
+    uint64_t phys_addr = (ppn << PAGE_SHIFT) | page_offset;
+    return (void *) phys_addr;
+}

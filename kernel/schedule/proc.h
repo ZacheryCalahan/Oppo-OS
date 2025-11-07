@@ -6,6 +6,8 @@
 
 #define SSTATUS_SPIE (1 << 5)
 
+extern struct process *current_proc;
+
 void init_proc(); // Initialize the scheduler
 struct process *create_process(const void *image, size_t image_size); // Register a process to the scheduler
 void yield(void);

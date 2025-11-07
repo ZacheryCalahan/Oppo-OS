@@ -124,7 +124,12 @@ struct process *create_process(const void *image, size_t image_size) {
         map_page(page_table, paddr, paddr, PAGE_R | PAGE_W | PAGE_X);
     }
 
-    map_page(page_table, VIRTIO_PADDR, VIRTIO_PADDR, PAGE_R | PAGE_W); // Map virtio to kernel map
+    // Devices map 
+    for (int i = 0; i < 8; i++) {
+        uint64_t addr = VIRTIO_PADDR + (0x1000 * i); // Each MMIO has a page.
+        map_page(page_table, addr, addr, PAGE_R | PAGE_W); // Map virtio to kernel map
+    }
+    
     
     // Map user pages
     for (uint64_t off = 0; off < image_size; off += PAGE_SIZE) {

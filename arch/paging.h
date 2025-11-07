@@ -22,6 +22,22 @@
 #define VPN0_SHIFT  12
 #define PPN_MASK    0x00000FFFFFFFFFFF
 
+/**
+ * Maps a page of memory at the specified virtual address to the page tables used by the MMU
+ * 
+ * @param vaddr Virtual address where the page should be mapped.
+ * @param paddr Physical address of the page to map.
+ * @param flags Permissions of the page
+ */
 void map_page(uint64_t *root_table, uint64_t vaddr, uint64_t paddr, uint32_t flags);
 
+/**
+ * Translates a virtual address to a physical address for use in the kernel.
+ * 
+ * @param root_table The address of the base of the root table
+ * @param vaddr The virtual address to convert
+ * 
+ * @returns Physical address of the given virtual address
+ */
+uint64_t *vaddr_to_paddr(uint64_t *root_table, uint64_t vaddr);
 #endif

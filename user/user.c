@@ -1,8 +1,25 @@
 #include "user.h"
 
-#define SYS_PUTC 1
-#define SYS_GETC 2
-#define SYS_EXIT 3
+enum SYSTEM_CALL_ID {
+    /* Files */
+    SYS_OPEN,   // open()
+    SYS_CLOSE,  // close()
+    SYS_READ,   // read()
+    SYS_WRITE,  // write()
+    SYS_IOCTL,  // ioctl()
+    SYS_STAT,   // stat()
+
+    /* Processes */
+    SYS_EXEC,   // exec()
+    SYS_EXIT,   // exit()
+    SYS_BRK,    // brk()
+
+    /* Temporary */
+    SYS_PUTC,   // Only used until devices are mapped to the file system.
+    SYS_GETC,   // 
+
+
+};
 
 extern char __stack_top[];
 
@@ -36,6 +53,18 @@ int syscall(int sysno, int arg0, int arg1, int arg2) {
     );
 
     return a0;
+}
+
+int32_t open(const char* path, int access) {
+    return syscall(SYS_OPEN, (int) path, access, 0);
+}
+
+int64_t read(int32_t fd, void *buf, uint32_t size) {
+    return syscall(SYS_READ, fd, (int) buf, size);
+}
+
+void close(int32_t fd) {
+    syscall(SYS_CLOSE, fd, 0, 0);
 }
 
 void putc(const char c) {

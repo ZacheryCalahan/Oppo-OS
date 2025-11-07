@@ -11,8 +11,6 @@
 
 #include "../../drivers/fs/ext2.h"
 
-typedef int32_t filedec_t;     // File descriptor (index into file desc. table)
-
 struct FILE {
     uint64_t file_pointer;      // The current offset into the file being read
     uint16_t access_mode;       // The permissions of the file
@@ -47,7 +45,7 @@ enum FS_FILE_ERR {
  * 
  * @returns Amount of bytes read, 0 if EOF.
  */
-int64_t read_file(filedec_t file_desc, void *buf, uint32_t size);
+int64_t read_file(int32_t file_desc, void *buf, uint32_t size);
 
 /**
  * Retrieves a file from the filesystem for user use.
@@ -55,20 +53,20 @@ int64_t read_file(filedec_t file_desc, void *buf, uint32_t size);
  * @param path The path to the file.
  * @return File descriptor number representing the file in memory.
  */
-filedec_t open_file(const char* path, enum FILE_ACCESS_PERMISSIONS perms);
+int32_t open_file(const char* path, enum FILE_ACCESS_PERMISSIONS perms);
 
 /**
  * Closes a file and returns the file space back to the allocator.
  * 
  * @param file Pointer to the `struct file`.
  */
-void close_file(filedec_t file_desc);
+void close_file(int32_t file_desc);
 
 /**
  * Writeback to the file pointed to by `struct FILE file`.
  * 
  * @param file Pointer to the FILE.
  */
-void flush_file(filedec_t file_desc);
+void flush_file(int32_t file_desc);
 
 #endif

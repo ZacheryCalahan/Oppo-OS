@@ -100,7 +100,7 @@ struct inode* get_root_inode() {
 
     // Retrieve the inode block start address, and pull the data from the address.
     uint32_t inode_table_block = bgdt->inode_block_start_block_addr;
-    printf("Inode table start block: %d\n", inode_table_block);
+    // printf("Inode table start block: %d\n", inode_table_block);
 
     // Read the root inode from the table
     struct inode *inode_table = read_block(inode_table_block);
@@ -194,24 +194,13 @@ struct inode* get_inode(char* path) {
     int32_t entries_to_search = current_node->count_hard_links;
     while (1) {
         // Determine where to read the entry from based on block pointer
-        struct directory_entry *entry;
-        if (block_number < 12) {
-            // Direct block pointer
-            entry = read_block(current_node->direct_block_pointer[block_number]);
-        } else if (block_number < (ext2_block_size + 12)) {
-            // Single indirect block pointer
-            uint32_t *blocks = read_block(current_node->single_indirect_block_pointer); // Array of direct block pointers
-            entry = read_block(blocks[block_number - 12]);
-            kfree_size(blocks, PAGE_SIZE);
-        } else { // Assume we're never using more than 16MiB for a single directory.
-            PANIC("EXT2: Directory search exceeded 16MiB.");
-        }
+        struct directory_entry *entry = read_block(get_block_address(current_node, block_number));
         
-        printf("Entries to search for in dir: %d\n", entries_to_search);
+        // printf("Entries to search for in dir: %d\n", entries_to_search);
 
         // Read through entire block of entries
         uint32_t block_idx = 0;
-        printf("Searching for: \"%s\"\n", current_path_item);
+        // printf("Searching for: \"%s\"\n", current_path_item);
         for (; block_idx < ext2_block_size;) {
             // Check that this entry is not empty.
             if (entry->inode == 0) {
@@ -235,11 +224,11 @@ struct inode* get_inode(char* path) {
             memcpy(entry_name, &entry->name, n);
             entry_name[n] = '\0';
 
-            printf("Entry data:\n");
-            printf("\tName: %s\n", entry_name);
-            printf("\tInode: %d\n", entry->inode);
-            printf("\tLength: %d\n", entry->name_len_lsb_8);
-            printf("\tType: %d\n\n", entry->type_indicator);
+            // printf("Entry data:\n");
+            // printf("\tName: %s\n", entry_name);
+            // printf("\tInode: %d\n", entry->inode);
+            // printf("\tLength: %d\n", entry->name_len_lsb_8);
+            // printf("\tType: %d\n\n", entry->type_indicator);
 
             // Check name
             if (!strcmp(entry_name, current_path_item)) {
@@ -248,13 +237,13 @@ struct inode* get_inode(char* path) {
 
                 if (current_path_item == NULL) {
                     // Last path item, return the i_node.
-                    printf("End of path chain.\n");
+                    // printf("End of path chain.\n");
                     return i_node;
                 }
 
                 // Not last item, traverse next dir level.
                 kfree_size(current_node, PAGE_SIZE); // Free the old inode
-                printf("Entering directory:\n\t%s\n", entry_name);
+                // printf("Entering directory:\n\t%s\n", entry_name);
                 current_node = i_node;
 
                 // Reset things in prep of next dir traversal.

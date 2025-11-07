@@ -17,28 +17,27 @@ void kmain(void) {
 	printf("\n\n");
 	
 	// Initialize kernel
+	printf("\nkernel: Init of arch code\n");
 	init_memory();
 	init_trap_handler();
 	init_proc();
 
-	// File Handling
+	// Device Drivers
+	printf("\nkernel: Init of device drivers\n");
 	virtio_blk_init();
+	//virtio_gpu_init();
+
+	printf("\nkernel: Init of File systems\n");
 	init_ext2();
 
-	// test of fs implementation
-	filedec_t file = open_file("hello.txt", O_RW);
-	char* buf = kalloc(1);
-	while (read_file(file, buf, PAGE_SIZE)) { // Read in all available bytes
-		printf("\n%s\n", buf);
-	}
-
-	close_file(file);
-	kfree_size(buf, PAGE_SIZE);
-
-	//virtio_gpu_init();
+	printf("\nkernel: Loading userland\n");
 
 	// Allow the scheduler to take control, and move to userspace!
 	create_process(_binary_shell_bin_start, (size_t) _binary_shell_bin_size);
+
+	printf("\nkernel: Passing control to programs.\n\n\n");
+
+	// Kernel init finished, run user programs.
 	yield();
 	
 	PANIC("Exited out of scheduler!?");
