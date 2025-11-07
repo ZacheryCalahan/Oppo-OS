@@ -1,6 +1,5 @@
 #include "stdio.h"
-#include "../user.h"
-
+#include "oppostd.h"
 
 void puts(const char *str) {
     while (*str != '\0') {
