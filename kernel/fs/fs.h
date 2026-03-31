@@ -9,31 +9,14 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#include "../../drivers/fs/ext2.h"
+#include "../../drivers/fs/ztfs.h"
 
 struct FILE {
     uint64_t file_pointer;      // The current offset into the file being read
-    uint16_t access_mode;       // The permissions of the file
-    struct inode *inode;        // The inode of the file
-    uint32_t refrence_count;    // The amount of references to this file
+    struct ztfs_entry *entry;   // File metadata
+    uint32_t reference_count;   // The amount of references to this file
 };
 
-enum FILE_ACCESS_PERMISSIONS {
-    O_RO        = 1, // Read only
-    O_WO        = 2, // Write only
-    O_RW        = 3, // Read/Write
-    O_CREATE    = 4, // Create if not existing
-    O_MKFILE_W  = 6, // Shortcut to create and write file
-    O_MKFILE_WR = 7, // Shortcut to create and W/R file.
-};
-
-enum FS_FILE_ERR {
-    FS_FILE_NOT_FOUND = -1,
-    FS_NO_OPEN_DESCRIPTORS = -2,
-    FS_INVALID_PERMS = -3,
-    
-    
-};
 
 /**
  * Reads up to the byte count in size into buf from the file pointed to by the file_desc.
@@ -45,7 +28,7 @@ enum FS_FILE_ERR {
  * 
  * @returns Amount of bytes read, 0 if EOF.
  */
-int64_t read_file(int32_t file_desc, void *buf, uint32_t size);
+int64_t kfread(int32_t file_desc, void *buf, uint32_t size);
 
 /**
  * Retrieves a file from the filesystem for user use.
@@ -53,20 +36,20 @@ int64_t read_file(int32_t file_desc, void *buf, uint32_t size);
  * @param path The path to the file.
  * @return File descriptor number representing the file in memory.
  */
-int32_t open_file(const char* path, enum FILE_ACCESS_PERMISSIONS perms);
+int32_t kfopen(const char* path);
 
 /**
  * Closes a file and returns the file space back to the allocator.
  * 
  * @param file Pointer to the `struct file`.
  */
-void close_file(int32_t file_desc);
+void kfclose(int32_t file_desc);
 
 /**
  * Writeback to the file pointed to by `struct FILE file`.
  * 
  * @param file Pointer to the FILE.
  */
-void flush_file(int32_t file_desc);
+void kfflush(int32_t file_desc);
 
 #endif
