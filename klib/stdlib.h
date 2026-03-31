@@ -84,6 +84,17 @@ void* memcpy(void* dest, const void* src, size_t len);
  */
 void kfree_size(void *ptr, uint64_t bytes);
 
+/**
+ * Compares `n` bytes of ptr1 to ptr2, returning 0 if all values match or a value different from 
+ * zero representing which is greater if they do not.
+ * 
+ * @param ptr1 Src buffer
+ * @param ptr2 Buffer to check against
+ * 
+ * @returns 0 if full buffer is equal, or a non-zero value if not equal. 
+ */
+int32_t memcmp(const void *ptr1, const void *ptr2, size_t n);
+
 static inline int is_aligned(uint64_t value, uint64_t align) {
     if (align == 0)
         align = sizeof(void*);

@@ -7,6 +7,7 @@
 
 #include <stdint.h>
 
+/***************************** Files ************************************/
 enum FILE_ACCESS_PERMISSIONS {
     O_RO        = 1, // Read only
     O_WO        = 2, // Write only
@@ -66,6 +67,27 @@ enum dir_entry_type_indicators {
     INDICATOR_TYPE_FIFO,
     INDICATOR_TYPE_SOCKET,
     INDICATOR_TYPE_SOFT_SYM_LINK,
+};
+
+/************************* System Calls *********************************/
+enum SYSTEM_CALL_ID {
+    /* Files */
+    SYS_OPEN,   // open()
+    SYS_CLOSE,  // close()
+    SYS_READ,   // read()
+    SYS_WRITE,  // write()
+    SYS_IOCTL,  // ioctl()
+    SYS_STAT,   // stat()
+    SYS_LSEEK,  // lseek()
+
+    /* Processes */
+    SYS_EXEC,   // exec()
+    SYS_EXIT,   // exit()
+    SYS_BRK,    // brk()
+
+    /* Temporary */
+    SYS_PUTC,   // Only used until devices are mapped to the file system.
+    SYS_GETC,   // 
 };
 
 /**

@@ -6,39 +6,31 @@
 #include "../arch/trap.h"
 #include "../arch/paging.h"
 #include "../drivers/virtio/virtio_blkio.h"
-#include "../drivers/fs/ext2.h"
+#include "../drivers/fs/ztfs.h"
 #include "../drivers/virtio/virtio_gpu.h"
+#include "../drivers/time/rtc.h"
 
 #include <stdint.h>
 
 extern char _binary_shell_bin_start[], _binary_shell_bin_size[];
 
 void kmain(void) {
-	printf("\n\n");
+	printf("\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n");
 	
 	// Initialize kernel
-	printf("\nkernel: Init of arch code\n");
 	init_memory();
 	init_trap_handler();
+
+	// Kernel Processes
 	init_proc();
 
-	// Device Drivers
-	printf("\nkernel: Init of device drivers\n");
+	// Kernel Device Drivers
 	virtio_blk_init();
 	//virtio_gpu_init();
 
-	printf("\nkernel: Init of File systems\n");
-	init_ext2();
-
-	printf("\nkernel: Loading userland\n");
-
-	// Allow the scheduler to take control, and move to userspace!
-	create_process(_binary_shell_bin_start, (size_t) _binary_shell_bin_size);
-
-	printf("\nkernel: Passing control to programs.\n\n\n");
-
-	// Kernel init finished, run user programs.
+	// Pass control to user programs!
+	create_process(_binary_shell_bin_start, (size_t) _binary_shell_bin_size); // Creator of processes
 	yield();
 	
-	PANIC("Exited out of scheduler!?");
+	PANIC("Exited out of scheduler. Halting!");
 }

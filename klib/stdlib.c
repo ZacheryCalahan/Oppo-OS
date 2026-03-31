@@ -35,6 +35,8 @@ void init_memory() {
     size_t total_pages = (heap_end - heap_start) / PAGE_SIZE;
     uintptr_t addr = heap_start;
 
+    printf("klibc: Pages available: %d\n", total_pages);
+
     // Greedy initialization
     for (int order = MAX_ORDER; order >= 0; order--) {
         size_t block_pages = 1 << order;
@@ -49,6 +51,7 @@ void init_memory() {
             total_pages -= block_pages;
         }
     }
+    
 }
 
 void* kalloc_order(size_t order) {
@@ -160,3 +163,17 @@ void* memcpy(void* dest, const void* src, size_t len) {
 
     return dest;
 }
+
+int32_t memcmp(const void *ptr1, const void *ptr2, size_t n) {
+    const uint8_t *a = (const uint8_t *) ptr1;
+    const uint8_t *b = (const uint8_t *) ptr2;
+
+    for (uint32_t i = 0; i < n; i++) {
+        if (a[i] != b[i]) {
+            return a[i] - b[i];
+        }
+    }
+
+    return 0;
+}
+

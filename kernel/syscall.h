@@ -12,6 +12,7 @@ enum SYSTEM_CALL_ID {
     SYS_WRITE,  // write()
     SYS_IOCTL,  // ioctl()
     SYS_STAT,   // stat()
+    SYS_LSEEK,  // lseek()
 
     /* Processes */
     SYS_EXEC,   // exec()

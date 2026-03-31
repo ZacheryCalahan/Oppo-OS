@@ -1,4 +1,4 @@
-C_SOURCES = $(shell find . -type f -name '*.c' ! -path './user/*')
+C_SOURCES = $(shell find . -type f -name '*.c' ! -path './user/*') # ew, I know.
 S_SOURCES = $(wildcard boot/*.s)
 OBJ = $(C_SOURCES:.c=.o)
 
@@ -11,7 +11,7 @@ OBJCPY= ~/opt/cross-riscv/bin/riscv64-elf-objcopy
 CFLAGS = -Wall -Wextra -mcmodel=medany -ffreestanding -g
 LFLAGS = -T linker.ld -nostdlib -o kernel.elf
 
-QEMUOPTS =  -machine virt -bios default -m 1G # 1 Gibibytes of RAM
+QEMUOPTS =  -machine virt -bios default -m 2G # 2 Gibibytes of RAM
 QEMUOPTS += -device virtio-gpu-device,bus=virtio-mmio-bus.1 -device virtio-blk-device,drive=drive0,bus=virtio-mmio-bus.0
 QEMUOPTS += -drive id=drive0,file=disk.img,if=none,format=raw # use fat_filesystem as a disk
 QEMUOPTS += -monitor mon:stdio
